@@ -25,9 +25,9 @@ For each video, the folder of the video project has:
 - Python 3.12, or the tool `uv`. `uv` downloads Python.
 - `ffmpeg`, `curl`, `perl`, `tar`. ImageMagick (`magick`) for the contact sheets.
 - A network connection for the install and for the voice (`edge-tts`).
-- Approximately 2 GB of disk space for the tools.
+- Approximately 1.5 GB of disk space for the tools.
 
-You do not need root access. The tools are in `~/.cache/aivideogen`.
+You do not need root access. The script puts the tools in the `.tools` folder of the repository. Thus the tools stay with the project.
 
 ## Quick start
 
@@ -39,7 +39,7 @@ You do not need root access. The tools are in `~/.cache/aivideogen`.
    tools/setup.sh
    ```
 
-   `tools/setup.sh` installs the Python environment and a portable TeX Live. At the end, `videogen doctor` verifies the tools.
+   `tools/setup.sh` installs the Python environment and a portable TeX Live in the folder `.tools` of the repository. At the end, `videogen doctor` verifies the tools. If `videogen` is not on the `PATH`, use `tools/videogen` in the folder of the repository.
 
 2. Install the skill in Claude Code. Use one of these procedures:
 

@@ -2,7 +2,7 @@
 
 This document shows the complete procedure for one video, with the commands. The skill does the same procedure with menus.
 
-The commands need the folder of a video project. Go to that folder first, or use `--root <folder>`.
+The commands need the folder of a video project. Go to that folder first, or use `--root <folder>`. If `videogen` is not on the `PATH`, use `tools/videogen` of the repository of the template in place of `videogen`.
 
 ## Step 1 — Start the video project
 

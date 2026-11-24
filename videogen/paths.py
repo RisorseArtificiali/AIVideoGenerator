@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 CONFIG_NAME = "video.toml"
+TOOLS_FOLDER = ".tools"
 
 
 def template_root() -> Path:
@@ -13,21 +14,34 @@ def template_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def cache_root() -> Path:
-    """The tools: the Python environment and TeX Live. Set AIVIDEOGEN_CACHE to move them."""
-    return Path(os.environ.get("AIVIDEOGEN_CACHE") or Path.home() / ".cache" / "aivideogen")
+def tools_root() -> Path:
+    """The folder that `tools/setup.sh` makes: the Python environment, TeX Live, and the
+    models of the offline speech recognizer.
+
+    Default: `.tools` in the repository, so that the tools stay with the project. A sandbox
+    that keeps the folder of the project also keeps the tools. Set AIVIDEOGEN_TOOLS to use
+    a different folder.
+    """
+    if os.environ.get("AIVIDEOGEN_TOOLS"):
+        return Path(os.environ["AIVIDEOGEN_TOOLS"]).expanduser().resolve()
+    return template_root() / TOOLS_FOLDER
 
 
 def venv_bin() -> Path:
-    return cache_root() / "venv" / "bin"
+    return tools_root() / "venv" / "bin"
 
 
 def tex_bin() -> Path | None:
     """The binaries of the portable TeX Live, if TeX Live is installed."""
-    for dvisvgm in sorted((cache_root() / "texlive" / "bin").glob("*/dvisvgm")):
+    for dvisvgm in sorted((tools_root() / "texlive" / "bin").glob("*/dvisvgm")):
         if os.access(dvisvgm, os.X_OK):
             return dvisvgm.parent
     return None
+
+
+def models_root() -> Path:
+    """The models that the commands download. They stay with the tools."""
+    return tools_root() / "models"
 
 
 def in_video(root: str | Path | None = None) -> Path:

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Start videogen with the tools of this repository. tools/setup.sh installs them.
+# The script operates from any folder. For example:
+#   ~/project/AIVideoGenerator/tools/videogen doctor
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TOOLS="${AIVIDEOGEN_TOOLS:-$ROOT/.tools}"
+if [ -d "$TOOLS" ]; then TOOLS="$(cd "$TOOLS" && pwd)"; else TOOLS="$PWD/${TOOLS#./}"; fi   # an absolute path
+
+if [ ! -x "$TOOLS/venv/bin/python" ]; then
+  echo "The tools of AIVideoGenerator are not installed. Start $ROOT/tools/setup.sh" >&2
+  exit 1
+fi
+
+# The Python environment has the path of the repository in its files. After a move of the
+# repository, it does not find the videogen package. Make the test from a neutral folder:
+# in the folder of the repository, Python finds the package also without the environment.
+if ! (cd "$TOOLS" && "$TOOLS/venv/bin/python" -c "import videogen.cli") >/dev/null 2>&1; then
+  echo "The Python environment has the path of a different folder. Start $ROOT/tools/setup.sh again." >&2
+  exit 1
+fi
+
+exec "$TOOLS/venv/bin/python" -m videogen.cli "$@"

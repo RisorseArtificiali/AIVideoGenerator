@@ -333,7 +333,11 @@ def cmd_voice_adopt(args):
 
 def cmd_options(args):
     """The data for the menus of the skill: languages, engines, voices."""
-    data = {"template": str(paths.template_root()), "version": __version__, "languages": [], "engines": []}
+    data = {
+        "template": str(paths.template_root()), "version": __version__,
+        "videogen": str(paths.template_root() / "tools" / "videogen"), "tools": str(paths.tools_root()),
+        "languages": [], "engines": [],
+    }
     for code, language in langs.LANGS.items():
         data["languages"].append({"code": code, "name": language.name, "voices": {engine.id: engine.voices(language) for engine in ENGINES.values()}})
     for engine in ENGINES.values():
@@ -462,7 +466,7 @@ def _video_root_or_here(root):
 
 def cmd_doctor(args):
     """Verify the tools. Exit status 1 when something necessary is missing."""
-    cache = paths.cache_root()
+    tools = paths.tools_root()
     problems, notes = [], []
 
     def line(ok: bool, name: str, detail: str, necessary: bool = True) -> None:
@@ -476,9 +480,11 @@ def cmd_doctor(args):
     except Exception:
         revision = "no git"
     print(f"AIVideoGenerator {__version__} in {template} ({revision})")
-    print(f"Tools in {cache}" + ("  (set by AIVIDEOGEN_CACHE)" if os.environ.get("AIVIDEOGEN_CACHE") else ""))
-    in_venv = Path(sys.prefix).resolve() == (cache / "venv").resolve()
-    line(in_venv, "python environment", f"{'venv of the cache' if in_venv else sys.prefix} (Python {sys.version.split()[0]})")
+    print(f"Tools in {tools}" + ("  (set by AIVIDEOGEN_TOOLS)" if os.environ.get("AIVIDEOGEN_TOOLS") else ""))
+    if tools.parent != template:
+        notes.append(f"the tools are not in the folder of the repository ({tools}). A sandbox can delete that folder between two sessions")
+    in_venv = Path(sys.prefix).resolve() == (tools / "venv").resolve()
+    line(in_venv, "python environment", f"{'the Python environment of the tools' if in_venv else sys.prefix} (Python {sys.version.split()[0]})")
     for module, necessary in (("manim", True), ("edge_tts", True), ("faster_whisper", False), ("trafilatura", False)):
         try:
             imported = __import__(module)
@@ -578,7 +584,10 @@ def cmd_transcript(args):
             cursor += len(audio) / 16000 + gap
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model = faster_whisper.WhisperModel(args.model, device="cpu", compute_type="int8", cpu_threads=args.threads)
+        model = faster_whisper.WhisperModel(
+            args.model, device="cpu", compute_type="int8", cpu_threads=args.threads,
+            download_root=str(paths.models_root() / "whisper"),   # the model stays with the tools
+        )
         # The recognizer gets the samples directly: its file reader does not agree with the
         # audio library that Manim uses.
         segments, _ = model.transcribe(np.concatenate(clips), language=config.language, beam_size=5, word_timestamps=True)

@@ -226,3 +226,6 @@ __marimo__/
 out/
 examples/*/build/
 examples/*/script.md
+
+# AIVideoGenerator: the tools that tools/setup.sh installs
+.tools/
