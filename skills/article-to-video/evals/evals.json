@@ -1,0 +1,23 @@
+{
+  "skill_name": "article-to-video",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Turn this article into a 3Blue1Brown style video: https://example.com/blog/attention-is-all-you-need-explained",
+      "expected_output": "The skill starts with the tools check (doctor), then asks a menu with the language of the video (independent of the article language), the speech engine, the voice and the coverage. It reads the article with `videogen extract`, shows a storyboard for approval, makes the voice clips, verifies the pronunciation with the transcript check, builds the scenes from the blocks, corrects them until `videogen check` is clean and the contact sheets are good, renders the 1080p60 film and reports the output files with their limits.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "ho questa nota tecnica in inglese (incollata qui sotto), me la fai diventare un video spiegato in italiano? non troppo lungo, max 4 minuti. https://example.org/papers/notes.pdf",
+      "expected_output": "The user writes in Italian and wants a short video. The menu offers Italian as the language of the video (the source is in English: the skill says that the two languages are independent) and the short coverage. The storyboard has 3 to 5 chapters and is approved before the code.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "fammi un video animato da questo documento, la voce la registro io",
+      "expected_output": "The menu offers 'My own recordings' as the engine. The skill makes the script with the IDs of the beats, waits for the recordings of the user, adopts them with `videogen voice-adopt`, and continues with the scenes.",
+      "files": []
+    }
+  ]
+}

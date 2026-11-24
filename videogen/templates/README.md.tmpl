@@ -1,0 +1,24 @@
+# __TITLE__
+
+A video project of AIVideoGenerator.
+
+- `narration.py`: the script, beat by beat
+- `scenes/`: one Manim scene for each chapter (`chNN_name.py`)
+- `video.toml`: language, speech engine, voice
+- `build/`: voice clips, time lines, previews (generated)
+- `out/`: the video, the subtitles, the chapters (generated)
+
+## Commands
+
+Do these commands in this folder:
+
+```bash
+videogen extract <url>        # optional: a web article to text and figures
+videogen tts                  # make the voice clips
+videogen check                # run the scenes: find layout, cue and pace problems
+videogen render --quality l   # preview at 480p
+videogen sheet                # contact sheets: one frame at the end of each beat
+videogen render               # final render at 1080p60
+videogen assemble             # the film, the subtitles, the chapters
+videogen script               # script.md: the narration with time codes
+```

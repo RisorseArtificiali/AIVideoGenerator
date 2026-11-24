@@ -1,0 +1,6 @@
+# The configuration of this video. For the permitted values, see the documentation.
+title = "Scene blocks: a tour"
+language = "en"
+engine = "edge-tts"
+rate = "+0%"
+out_name = "scene-blocks-tour"
