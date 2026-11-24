@@ -2,7 +2,12 @@
 
 ## The command `videogen` is not available
 
-The command is in `~/.cache/aivideogen/venv/bin/`. This folder is not on the `PATH`. Use the full path, or add the folder to the `PATH`. See [Install the tools](1-install.md).
+The command is in `.tools/venv/bin/` in the folder of the repository. This folder is not on the `PATH`. In the folder of the repository, use `tools/videogen`. Or use the full path. Or add the folder to the `PATH`. See [Install the tools](1-install.md).
+
+## `tools/videogen` does not start
+
+- "The tools of AIVideoGenerator are not installed": a new clone of the repository has no folder `.tools`. Start `tools/setup.sh`.
+- "The Python environment has the path of a different folder": you moved the repository. The Python environment has the old path in its files. Start `tools/setup.sh` again in the new location.
 
 ## `videogen doctor` shows MISSING lines
 
@@ -57,9 +62,9 @@ You changed the narration or the voice after the render. Start `videogen render`
 
 You did not render that scene at that quality. Start `videogen render --quality <quality> <scene>`.
 
-## The tools are gone
+## The tools are gone between two sessions
 
-Some programs delete the content of `~/.cache`. Start `tools/setup.sh` again. To prevent the problem, set `AIVIDEOGEN_CACHE` to a folder that no program deletes.
+The tools are in the folder `.tools` of the repository. If that folder is gone, the sandbox does not keep the folder of the repository. The command `git clean -fdx` also deletes that folder. In these cases, start `tools/setup.sh` again. If `AIVIDEOGEN_TOOLS` points to a folder outside the project, a sandbox can delete that folder. Remove the variable, then start `tools/setup.sh` again.
 
 ## The offline recognizer does not read a file
 

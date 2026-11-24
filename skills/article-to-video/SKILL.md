@@ -19,14 +19,27 @@ Read this before Step 0. It explains the reasons of the rules below.
 
 ## Step 0 — The tools
 
-The command `videogen` must be on this computer before any other step.
+`videogen` operates only if the tools are installed. The tools are in the folder `.tools` of the repository of the template (AIVideoGenerator): `tools/setup.sh` puts them there. Thus you need the folder of the template.
 
-1. Try `videogen doctor`. If the command is not available, try `~/.cache/aivideogen/venv/bin/videogen doctor`.
-2. If `videogen` is not installed, the template is not on this computer or its tools are missing. Ask with a menu: "The AIVideoGenerator tools are not installed. Install them now?" Options: "Install now (Recommended)" and "Stop". For "Install now": ask for the folder of the template if the repository was not cloned, clone `https://github.com/RisorseArtificiali/AIVideoGenerator.git`, then start `tools/setup.sh` in that folder.
-3. If `doctor` shows MISSING lines, offer the same menu. `doctor --fix` starts `tools/setup.sh`.
-4. Show the result of `doctor --online` to the user in one line.
+Find the command in this order. Stop at the first command that prints a report:
 
-Condition: `doctor` prints "All the necessary tools are ready." The `--online` test needs a network connection: if it fails, tell the user that the voice needs the network.
+1. `videogen doctor`: the command is on the `PATH`.
+2. `tools/videogen doctor`: the current directory is the folder of the template.
+3. `$AIVIDEOGEN_HOME/tools/videogen doctor`: the variable `AIVIDEOGEN_HOME` gives the folder of the template.
+4. `~/project/AIVideoGenerator/tools/videogen doctor`: the usual folder.
+
+Then use that command in each step below, in place of `videogen`.
+
+If no command operates, the cause is one of these:
+
+- **The template is not on this computer.** No folder of the list has `tools/setup.sh` and `videogen/`. Ask with a menu: "The repository AIVideoGenerator is not on this computer. Where is it?" Options: "Clone it in `~/project/AIVideoGenerator` (Recommended)" and "Stop". The user can write the path of a different folder. Then clone `https://github.com/RisorseArtificiali/AIVideoGenerator.git`, and start `tools/setup.sh` in the clone.
+- **The template is on this computer, but the tools are not complete.** `tools/videogen` prints "The tools of AIVideoGenerator are not installed", or `doctor` shows MISSING lines. Ask with a menu: "The tools of AIVideoGenerator are not complete. Install them now?" Options: "Install now (Recommended)" and "Stop". For "Install now", start `tools/setup.sh` in the folder of the template. The install needs 5 to 15 minutes.
+
+Last, start `<command> doctor --online` and tell the result to the user in one line. `--online` needs a network connection: if it fails, say that the voice needs the network.
+
+Condition: `doctor` prints "All the necessary tools are ready."
+
+`tools/setup.sh` puts the tools in the folder of the template, not in the home directory: a sandbox that keeps the folder of the project also keeps the tools. If `doctor` prints a NOTE that the tools are in a different folder, tell the user that a sandbox can delete that folder between two sessions.
 
 ## Step 1 — The menu: source, language, engine
 

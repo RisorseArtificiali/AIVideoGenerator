@@ -9,7 +9,7 @@ import manim
 import pytest
 from manim import DOWN
 
-from videogen import blocks, langs, speech, subtitles, theme
+from videogen import blocks, langs, paths, speech, subtitles, theme
 from videogen import config as video_config
 from videogen.narration import load_script
 from videogen.tts import load_env
@@ -156,6 +156,37 @@ def test_configuration(tmp_path):
         video_config.load(tmp_path)
     assert video_config.slugify("Scene blocks: a tour!") == "scene-blocks-a-tour"
     assert theme.plain("100% of a_b & c").width > 0
+
+
+def test_tools_folder(tmp_path, monkeypatch):
+    monkeypatch.delenv("AIVIDEOGEN_TOOLS", raising=False)
+    assert paths.tools_root() == paths.template_root() / ".tools"
+    assert paths.venv_bin() == paths.template_root() / ".tools" / "venv" / "bin"
+    assert paths.models_root() == paths.template_root() / ".tools" / "models"
+    monkeypatch.setenv("AIVIDEOGEN_TOOLS", str(tmp_path / "elsewhere"))
+    assert paths.tools_root() == tmp_path / "elsewhere"
+
+
+def test_find_the_video_project(tmp_path, monkeypatch):
+    project = tmp_path / "videos" / "demo"
+    (project / "scenes").mkdir(parents=True)
+    (project / "video.toml").write_text('title = "T"\n', encoding="utf-8")
+    monkeypatch.delenv("VIDEO_ROOT", raising=False)
+    monkeypatch.chdir(project / "scenes")
+    assert paths.in_video() == project.resolve()          # the nearest parent with video.toml
+    assert paths.in_video(tmp_path / "other") == (tmp_path / "other").resolve()
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(LookupError):
+        paths.in_video()
+
+
+def test_the_wrapper_starts_videogen():
+    import subprocess
+
+    wrapper = paths.template_root() / "tools" / "videogen"
+    done = subprocess.run([str(wrapper), "--version"], capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.startswith("videogen ")
 
 
 def test_env_file(tmp_path, monkeypatch):

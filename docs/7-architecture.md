@@ -53,10 +53,13 @@ At the end of the scene, the time line is saved in `build/timing/<quality>/<scen
 
 ## The folders of the tools
 
+The tools are in the folder `.tools` of the repository: they stay with the project. Set `AIVIDEOGEN_TOOLS` to use a different folder.
+
 | Folder | Content |
 |---|---|
-| `~/.cache/aivideogen/venv/` | the Python environment, with the template installed |
-| `~/.cache/aivideogen/texlive/` | a portable TeX Live. It has only the packages that Manim needs |
+| `.tools/venv/` | the Python environment, with the template installed |
+| `.tools/texlive/` | a portable TeX Live. It has only the packages that Manim needs |
+| `.tools/models/whisper/` | the model of the offline speech recognizer |
 
 `videogen` adds the folder of TeX Live to the `PATH` when the theme starts. Manim finds `latex` and `dvisvgm` there.
 
