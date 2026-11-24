@@ -1,0 +1,10 @@
+{
+  "name": "aivideogenerator",
+  "version": "0.1.0",
+  "description": "Make a narrated explainer video in the 3Blue1Brown style from an article, a paper, a document, or notes. The skill asks for the source, the language of the video, and the speech engine with menus, then sets up the tools, writes the narration, verifies the scenes, and renders the film.",
+  "author": {
+    "name": "Risorse Artificiali"
+  },
+  "homepage": "https://github.com/RisorseArtificiali/AIVideoGenerator",
+  "keywords": ["video", "manim", "3blue1brown", "explainer", "tts", "animation"]
+}

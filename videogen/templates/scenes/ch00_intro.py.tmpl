@@ -1,0 +1,24 @@
+"""Opening: the title of the video.
+
+Each scene file has one class that inherits from NarratedScene. The attribute scene_key is
+the name of the scene in narration.py. `build()` puts the visuals in beats.
+"""
+
+from manim import *
+
+from videogen.theme import *
+
+
+class Intro(NarratedScene):
+    scene_key = "ch00"
+
+    def build(self):
+        with self.beat("a1"):
+            rule = Line(LEFT * 2.4, RIGHT * 2.4, color=BRIGHT["orange"], stroke_width=4).move_to([0.4, 0.0, 0])
+            self.play(Create(rule), run_time=1.2)
+            self.play(Write(plain(self.config.title, size=60).move_to([0.4, 0.9, 0])), run_time=1.6)
+
+        with self.beat("a2"):
+            subtitle = lines("A subtitle that says", "what the viewer learns", size=30, color=INK["secondary"], aligned_edge=ORIGIN)
+            subtitle.move_to([0.4, -1.2, 0])
+            self.play(FadeIn(subtitle, shift=UP * 0.08), run_time=1.2)

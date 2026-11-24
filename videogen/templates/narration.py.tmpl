@@ -1,0 +1,26 @@
+"""The script of this video: the single source of truth of the voice-over.
+
+SCENE_ORDER  the scenes, in order. One scene file for each: scenes/chNN_name.py
+CHAPTERS     number and title of each scene. Use ("", "") for a scene without a title.
+NARRATION    the beats of each scene. One beat is one or two sentences: Beat(key, text, note).
+
+The note says what is on the screen during the beat. The scenes use the keys:
+`with self.beat("a1"):`.
+"""
+
+from collections import namedtuple
+
+Beat = namedtuple("Beat", "key text visual")
+
+SCENE_ORDER = ["ch00"]
+
+CHAPTERS = {
+    "ch00": ("", ""),
+}
+
+NARRATION = {
+    "ch00": [
+        Beat("a1", "__BEAT_1__", "__VISUAL_1__"),
+        Beat("a2", "__BEAT_2__", "__VISUAL_2__"),
+    ],
+}

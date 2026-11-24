@@ -221,3 +221,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AIVideoGenerator: files that the pipeline makes
+out/
+examples/*/build/
+examples/*/script.md

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "aivideogenerator",
+  "description": "Narrated explainer videos in the 3Blue1Brown style from an article or a document.",
+  "owner": {
+    "name": "Risorse Artificiali"
+  },
+  "plugins": [
+    {
+      "name": "aivideogenerator",
+      "source": "./",
+      "description": "The article-to-video skill: a video in the 3Blue1Brown style from an article, a paper, or notes, in the language that you select.",
+      "category": "productivity",
+      "homepage": "https://github.com/RisorseArtificiali/AIVideoGenerator"
+    }
+  ]
+}
