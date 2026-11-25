@@ -1,6 +1,6 @@
 # The workflow, step by step
 
-This document shows the complete procedure for one video, with the commands. The skill does the same procedure with menus.
+This document shows the complete procedure for one video, with the commands. The skill does the same procedure: it shows one menu at the start, then it follows these steps to the end.
 
 The commands need the folder of a video project. Go to that folder first, or use `--root <folder>`. If `videogen` is not on the `PATH`, use `tools/videogen` of the repository of the template in place of `videogen`.
 
@@ -12,7 +12,7 @@ videogen new videos/my-video --language en --title "Title of the video"
 
 The command makes the folder with:
 
-- `video.toml`: the configuration.
+- `video.toml`: the configuration, with the look of the video (the background, the logo, the band and the subtitles).
 - `narration.py`: the script, with two beats as an example.
 - `spoken_rules.py`: how the voice reads some names.
 - `scenes/ch00_intro.py`: the first scene, as an example.
@@ -67,7 +67,7 @@ videogen check
 
 The command runs the scenes and reports:
 
-- `[layout]`: text out of the frame, or text on text.
+- `[layout]`: text out of the frame, text on text, text in the band of the subtitles or under the logo.
 - `[cue]`: a phrase of `hold_until` that is not in the clip.
 - `[pace]`: a beat with visuals longer than the voice clip.
 
@@ -82,19 +82,23 @@ videogen sheet
 
 `render --quality l` makes a video at 480p. `sheet` makes contact sheets in `build/sheets/l/`: one frame at the end of each beat. Open and look at each sheet. Correct the scenes, then start Steps 6 and 7 again.
 
+The preview has the background and the logo, but not the subtitles. Step 8 shows them.
+
 ## Step 8 — Make the film
 
 ```bash
 videogen render
 videogen assemble
 videogen sync
-videogen script --quality h
+videogen script
+videogen sheet --film --quality h
 ```
 
 - `render` makes the scenes at 1080p60.
-- `assemble` joins the scenes, adds the voice, and makes `out/<name>_1080p.mp4`, the subtitles, and `chapters.txt`.
+- `assemble` joins the scenes, adds the voice, draws the subtitles into the film, and makes `out/<name>_1080p.mp4` and `chapters.txt`.
 - `sync` verifies that each voice clip starts at the correct time in the film.
 - `script` makes `script.md`: the narration with time codes.
+- `sheet --film --quality h` makes contact sheets from the film in `build/sheets/h-film/`: one frame at the end of each beat, with its subtitle. Open and look at each sheet. It is the last verification: the background, the logo, the subtitles in the band at the bottom, and no content in that band.
 
 ## A different voice, or your voice
 

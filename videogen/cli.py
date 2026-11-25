@@ -231,7 +231,23 @@ def cmd_assemble(args):
             check=True,
         )
     cues = subtitles.group_cues(words, language.function_words)
-    (out / f"{config.out}_{QUALITIES[quality][1]}p.srt").write_text(subtitles.srt_text(cues, cursor), encoding="utf-8")
+    stem = f"{config.out}_{QUALITIES[quality][1]}p"
+    if config.subtitles:
+        # The subtitles are drawn into the film (section `[subtitles]` of video.toml), and no
+        # file of subtitles stays with the film: a player looks for one next to the film and in
+        # the folders under it, and shows it over the subtitles that are in the film.
+        for stale in (out / f"{stem}.srt", out / f"{stem}.ass"):
+            stale.unlink(missing_ok=True)
+    else:
+        (out / f"{stem}.srt").write_text(subtitles.srt_text(cues, cursor), encoding="utf-8")
+    if config.subtitles:
+        fonts = config.root / config.subtitles.fonts if config.subtitles.fonts else None
+        factor = subtitles.letters_factor(config.subtitles.font, fonts)
+        work = config.root / "build" / "subtitles"   # the .ass file is a step of the work: it stays here
+        work.mkdir(parents=True, exist_ok=True)
+        ass = work / f"{stem}.ass"
+        ass.write_text(subtitles.ass_text(cues, config.subtitles, cursor, factor), encoding="utf-8")
+        subtitles.burn(final, ass, fonts)
     def clock(seconds: float) -> str:
         return f"{int(seconds // 60):02d}:{seconds % 60:05.2f}".replace(".", language.decimal_separator)
 
@@ -290,15 +306,37 @@ def cmd_script(args):
     print(f"{target} ({int(cursor // 60)} min {cursor % 60:.0f} s, {script.beat_count} beats)")
 
 
+def assembled_film(config, quality: str, script) -> tuple[Path, dict[str, float]]:
+    """The film of `out/` at a quality, and the time at which each scene starts in it. The film
+    must be at that quality, made from this narration, and newer than the videos of the scenes."""
+    out = config.root / "out"
+    film = out / f"{config.out}_{QUALITIES[quality][1]}p.mp4"
+    record = out / "film.json"
+    if not film.is_file() or not record.is_file():
+        raise RuntimeError(f"No film at quality '{quality}' in {out}. Do: videogen assemble --quality {quality}")
+    data = json.loads(record.read_text(encoding="utf-8"))
+    if data["file"] != film.name or len(data["chapters"]) != len(script.order):
+        raise RuntimeError(f"The film in {out} is not a film of this narration at quality '{quality}'. "
+                           f"Do: videogen assemble --quality {quality}")
+    for scene in script.order:
+        timeline_path = config.root / "build" / "timing" / quality / f"{scene}.json"
+        if film.stat().st_mtime < timeline_path.stat().st_mtime - 5:
+            raise RuntimeError(f"The film is older than the video of {scene}. "
+                               f"Do: videogen assemble --quality {quality}")
+    return film, {scene: chapter["start"] for scene, chapter in zip(script.order, data["chapters"])}
+
+
 def cmd_sheet(args):
-    """One frame at the end of each beat, in contact sheets: to verify the visuals fast."""
+    """One frame at the end of each beat, in contact sheets: to verify the visuals fast. With
+    `--film`, the frames come from the film in `out/`: they show the subtitles."""
     config = video_config.load(args.root)
     script = load_script(config.root)
-    out = config.root / "build" / "sheets" / args.quality
+    out = config.root / "build" / "sheets" / (f"{args.quality}-film" if args.film else args.quality)
     out.mkdir(parents=True, exist_ok=True)
     width, columns, per_sheet = (768, 3, 9) if args.quality == "l" else (960, 2, 8)
+    film, starts = assembled_film(config, args.quality, script) if args.film else (None, {})
     for scene in args.scenes or script.order:
-        videos = scene_videos(config.root, args.quality, scene)
+        videos = [film] if film else scene_videos(config.root, args.quality, scene)
         timeline_path = config.root / "build" / "timing" / args.quality / f"{scene}.json"
         if not videos or not timeline_path.is_file():
             print(f"{scene}: no video at quality '{args.quality}'")
@@ -307,7 +345,7 @@ def cmd_sheet(args):
         with tempfile.TemporaryDirectory() as tmp:
             frames = []
             for key, _start, end in actual["beats"]:
-                stamp = max(0.0, end - 0.3)
+                stamp = max(0.0, starts.get(scene, 0.0) + end - 0.3)
                 target = Path(tmp) / f"{key}_at_{stamp:05.1f}s.png"
                 subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{stamp:.3f}", "-i", str(videos[-1]), "-frames:v", "1", "-vf", f"scale={width}:-1", str(target)], check=True)
                 frames.append(target)
@@ -376,7 +414,8 @@ def cmd_new(args):
         target = folder / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
-    (folder / paths.CONFIG_NAME).write_text(video_config.render(config), encoding="utf-8")
+    configuration = video_config.render(config) + video_config.look_text(folder.resolve())
+    (folder / paths.CONFIG_NAME).write_text(configuration, encoding="utf-8")
     (folder / ".gitignore").write_text("build/\nout/\nscript.md\n", encoding="utf-8")
     print(f"Video project in {folder}: narration.py, scenes/ch00_intro.py, {paths.CONFIG_NAME}")
     print("Next: videogen extract <url>  (optional), then write narration.py and the scenes, then videogen tts, check, render, assemble.")
@@ -650,7 +689,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("check", cmd_check, "run the scenes without a video: find layout, cue and pace problems"),
         ("render", cmd_render, "render the scenes"),
         ("sheet", cmd_sheet, "contact sheets with one frame at the end of each beat"),
-        ("assemble", cmd_assemble, "join the scenes, add the voice, write subtitles and chapters"),
+        ("assemble", cmd_assemble, "join the scenes, add the voice and the subtitles, write the chapters"),
         ("script", cmd_script, "write script.md: the narration with time codes"),
         ("voice-adopt", cmd_voice_adopt, "use your recordings as the voice-over"),
         ("selftest", cmd_selftest, "run the full pipeline on the demo video"),
@@ -670,6 +709,10 @@ def build_parser() -> argparse.ArgumentParser:
     commands.choices["doctor"].add_argument("--online", action="store_true", help="also test the speech service with one short sentence for each language")
     commands.choices["doctor"].add_argument("--fix", action="store_true", help="correct the problems with tools/setup.sh")
     commands.choices["options"].add_argument("--online", action="store_true", help="also get the full list of voices from the speech service")
+    commands.choices["sheet"].add_argument(
+        "--film", action="store_true",
+        help="the frames come from the film in out/, at the quality of --quality: they show the subtitles",
+    )
     new = commands.choices["new"]
     new.add_argument("folder", help="the folder of the new video project")
     new.add_argument("--title", help="the title of the video (default: the name of the folder)")
@@ -681,7 +724,10 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--limit", type=int, default=30, help="maximum number of figures to download (default: 30)")
     commands.choices["tts"].add_argument("--force", action="store_true", help="make all the clips again")
     commands.choices["tts"].add_argument("--workers", type=int, default=4, help="clips that are made at the same time")
-    commands.choices["script"].add_argument("--quality", choices=QUALITIES, help="use the time codes of a render at this quality")
+    commands.choices["script"].add_argument(
+        "--quality", choices=QUALITIES, default="h",
+        help="use the time codes of a render at this quality (default: h, the final render)",
+    )
     adopt = commands.choices["voice-adopt"]
     adopt.add_argument("folder", help="the folder of your recordings: <scene>_<beat>.wav")
     adopt.add_argument("--force", action="store_true", help="replace the beats that are already a recording")

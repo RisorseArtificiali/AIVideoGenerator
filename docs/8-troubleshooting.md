@@ -42,6 +42,22 @@ The error has the form `latex error converting to dvi`. The usual cause is a cha
 - Two objects at the same position: usually a position that you calculated for a different size of text.
 - A line of text with large letters (mathematics) touches the next line: move one of them a little.
 
+## `[layout]`: text in the subtitle band, or under the logo
+
+The line is where the subtitles are drawn, or where the logo is. Move the content up, above `y = -2.9` with the look of the template, or away from the corner at the top right. The blocks keep both free with their default positions: the cause is usually a position or a height that you gave to a block.
+
+## The player shows the subtitles two times
+
+The subtitles are in the film. The player found a file of subtitles (`.srt` or `.ass`) next to the film or in the folders under it, and shows it over the film. Delete that file. `videogen assemble` deletes the files with the name of the film in `out/` when it draws the subtitles. It does not see the files in the other folders.
+
+## The subtitles have a different font, or are smaller than `size`
+
+The name in `subtitles.font` is not the name of the family in a file of the folder `subtitles.fonts`, or the path of the folder is not correct. The paths are relative to the folder of the video project. To know the name of a family: `fc-scan --format "%{family}" <file of the font>`.
+
+## "No image: …"
+
+The path of `style.background` or of `style.logo` in `video.toml` is not correct. The paths are relative to the folder of the video project. The look of the template points to the folder `media` of the repository. When you move a video project to a different computer, and the paths are absolute, correct them. Or start `videogen new` in a temporary folder on that computer, and copy the two sections of the look from its `video.toml`.
+
 ## `[cue]`: a phrase is not in the clip
 
 The phrase of `hold_until` is not in the words of the clip. Copy the phrase from the text of the beat. If a rule in `spoken_rules.py` changes the words, write the changed words.

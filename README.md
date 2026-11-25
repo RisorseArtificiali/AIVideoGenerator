@@ -5,7 +5,7 @@ AIVideoGenerator makes narrated explainer videos in the style of 3Blue1Brown: an
 The repository has two parts:
 
 - **The template**: the engine `videogen`. It has the command line, the scene blocks, and the speech engines.
-- **The skill** `article-to-video`: the procedure for the agent. It asks for the source, the language of the video, and the speech engine with menus. Then it verifies the tools, writes the narration, makes the scenes, verifies them, and renders the film.
+- **The skill** `article-to-video`: the procedure for the agent. It shows one menu at the start: the mode (automatic, or personalized to build the plan with you), the language with the voice, the speech engine, the coverage. Then it verifies the tools, writes the narration, makes the scenes, verifies them, and renders the film.
 
 ## What you get
 
@@ -13,11 +13,25 @@ For each video, the folder of the video project has:
 
 | File | Content |
 |---|---|
-| `out/<name>_1080p.mp4` | the film, 1080p60 |
-| `out/<name>_1080p.srt` | the subtitles, from the time of each word |
+| `out/<name>_1080p.mp4` | the film, 1080p60, with the subtitles drawn into it |
 | `out/chapters.txt` | the time of each chapter |
 | `out/voice.wav` | the voice only, to add music |
 | `script.md` | the narration with time codes and the visual of each beat |
+| `storyboard.md` | the plan of the video: the chapters, the beats, the duration, the choices that you can change |
+
+## The look of the video
+
+Every video has the look of the template:
+
+- a background image behind the scenes;
+- a logo, small, at the top right;
+- a band at the bottom that the scenes keep free;
+- the subtitles drawn into the film, at the bottom of that band.
+
+The images and the font are in the folder `media`. `videogen new` writes the look into the `video.toml` of a new project, in the sections `[style]` and `[subtitles]`.
+
+- To change the look of the next videos: edit `videogen/templates/look.toml`, or the files of `media`.
+- To change the look of one video: edit the two sections of its `video.toml`. Without them, the video has the plain dark background, and the subtitles are a `.srt` file in `out/`. The details are in [The video project](docs/3-video-project.md).
 
 ## Requirements
 
@@ -50,7 +64,7 @@ You do not need root access. The script puts the tools in the `.tools` folder of
 
    > Make a video in the 3Blue1Brown style from this article: https://...
 
-   The skill shows the menus.
+   The skill shows one menu at the start, then it makes the video. In the automatic mode it decides alone and lists its decisions in the final report. In the personalized mode it asks for the focus of the video and agrees on the plan with you: your angle, your content, other sources.
 
 ## How it works
 
@@ -63,7 +77,7 @@ You do not need root access. The script puts the tools in the `.tools` folder of
 | 5 | — | you write the scenes with the blocks |
 | 6 | `videogen check` | a report: text out of the frame, text on text, cues, pace |
 | 7 | `videogen render --quality l` and `videogen sheet` | the preview and the contact sheets |
-| 8 | `videogen render` and `videogen assemble` | the film at 1080p60 |
+| 8 | `videogen render`, `videogen assemble` and `videogen sheet --film --quality h` | the film at 1080p60 with its subtitles, and the contact sheets of the film |
 
 A **beat** is one or two sentences of the narration: one audio clip. The scene of a chapter shows one beat at a time. The animation continues for the length of the clip. A visual can appear on one word of the clip. Thus the voice and the video agree when you change the text, the voice, or the speed.
 
@@ -92,7 +106,8 @@ The documentation uses the rules of ASD-STE100, Simplified Technical English.
 
 - `edge-tts` is not an official API of Microsoft. It is free and needs no key, but the service can change or stop. The text of the narration goes to the servers of Microsoft.
 - The agent cannot hear the audio. It verifies the pronunciation with an offline speech recognizer. Listen to the voice and the rhythm yourself.
-- The automatic verification of the layout finds text out of the frame and text on text. It does not find a line on text or a bad position: look at the contact sheets.
+- The automatic verification of the layout finds text out of the frame and text on text. It does not find a line on text or a bad position: look at the contact sheets of the scenes and of the film (`videogen sheet --film`).
+- The subtitles in the film are part of the image: the viewer cannot turn them off.
 
 ## License
 

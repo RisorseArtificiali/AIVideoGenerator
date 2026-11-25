@@ -69,9 +69,9 @@ class Diagrams(NarratedScene):
 
         with self.beat("c5"):
             self.clear_stage()
-            tower = stack(9, 2.0, 4.0, BRIGHT["blue"], fill=0.16, stroke=1.8).move_to([-2.6, -0.3, 0])
-            source = LabeledBox("input", BRIGHT["amber"], fill=0.1, size=32).move_to([-2.6, -3.3, 0])
-            sink = LabeledBox("output", BRIGHT["green"], fill=0.1, size=32).move_to([-2.6, 2.6, 0])
+            tower = stack(9, 2.0, 3.4, BRIGHT["blue"], fill=0.16, stroke=1.8).move_to([-2.6, -0.1, 0])
+            source = LabeledBox("input", BRIGHT["amber"], fill=0.1, size=32).move_to([-2.6, -2.55, 0])
+            sink = LabeledBox("output", BRIGHT["green"], fill=0.1, size=32).move_to([-2.6, 2.15, 0])
             up = arr(source.get_top() + UP * 0.05, tower.get_bottom() + DOWN * 0.05, INK["secondary"], buff=0, stroke=4)
             out = arr(tower.get_top() + UP * 0.05, sink.get_bottom() + DOWN * 0.05, INK["secondary"], buff=0, stroke=4)
             note = lines("Nine layers", "The signal goes", "from the bottom", "to the top", size=30, color=INK["secondary"], aligned_edge=ORIGIN)

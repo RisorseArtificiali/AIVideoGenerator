@@ -1,0 +1,19 @@
+# The look of every new video. `videogen new` copies these two sections into the video.toml of
+# a new project, with paths relative to the folder of the project. The files are in the folder
+# `media` of the repository.
+#
+# - To change the look of the next videos: edit this file, or the files of `media`.
+# - To change the look of one video: edit the two sections in its video.toml.
+# - A video without the look: delete the two sections from its video.toml.
+
+[style]
+background = "media/background.png"
+logo = "media/logo_risorse.png"
+logo_height = 180
+subtitle_band = 140
+
+[subtitles]
+font = "Inter"
+fonts = "media/fonts"
+size = 62
+color = "#FF0000"

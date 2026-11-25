@@ -19,7 +19,7 @@ import numpy as np
 from manim import *
 
 from videogen import config as video_config
-from videogen import langs, paths, speech
+from videogen import langs, paths, speech, style
 from videogen.narration import Script, load_script
 from videogen.speech import track_hash
 
@@ -383,6 +383,9 @@ class BeatTrack:
 # --------------------------------------------------------- verification of the layout
 
 FRAME_MARGIN = 0.1
+# The lowest line of text of a screen at 1080p, with the band of the subtitles of the look of
+# the template under it. The blocks place their lowest text above this line.
+STAGE_BOTTOM = -2.9
 
 
 @dataclass(frozen=True)
@@ -394,6 +397,10 @@ class LayoutIssue:
     def describe(self) -> str:
         if self.kind == "overlap":
             return f'overlap: "{self.first}" on "{self.second}"'
+        if self.kind == "in-band":
+            return f'in the subtitle band: "{self.first}"'
+        if self.kind == "under-logo":
+            return f'under the logo: "{self.first}"'
         return f'out of frame: "{self.first}"'
 
 
@@ -429,8 +436,11 @@ def overlaps(first: tuple, second: tuple, tolerance: float = 0.05) -> bool:
     return width > 0 and height > 0
 
 
-def layout_issues(mobjects, width: float | None = None, height: float | None = None, margin: float = FRAME_MARGIN) -> list[LayoutIssue]:
-    """Text that goes out of the frame, and lines of text that are one on the other."""
+def layout_issues(mobjects, width: float | None = None, height: float | None = None, margin: float = FRAME_MARGIN,
+                  band: float = 0.0, corner: tuple | None = None) -> list[LayoutIssue]:
+    """Text that goes out of the frame, lines of text that are one on the other, and (with a
+    `band`) text in the band at the bottom that the project keeps free for its subtitles, and
+    (with a `corner`, the bottom-left point of the logo) text under the logo."""
     width = config.frame_width if width is None else width
     height = config.frame_height if height is None else height
     items = text_boxes(mobjects)
@@ -439,6 +449,10 @@ def layout_issues(mobjects, width: float | None = None, height: float | None = N
     for text, (left, bottom, right, top) in items:
         if left < -limit_x or right > limit_x or bottom < -limit_y or top > limit_y:
             issues.append(LayoutIssue("out-of-frame", text))
+        elif band > 0 and bottom < -height / 2 + band:
+            issues.append(LayoutIssue("in-band", text))
+        elif corner and right > corner[0] and top > corner[1]:
+            issues.append(LayoutIssue("under-logo", text))
     for index, (text, box) in enumerate(items):
         for other_text, other_box in items[index + 1:]:
             if overlaps(box, other_box):
@@ -446,7 +460,15 @@ def layout_issues(mobjects, width: float | None = None, height: float | None = N
     return issues
 
 
-# ---------------------------------------------------------------------- the scene
+# ------------------------------------------------------------------------ the scene
+
+
+def apply_background(camera, config: video_config.VideoConfig) -> None:
+    """The background of the camera: the image of the project (section `[style]` of video.toml),
+    or the color of the template."""
+    image = style.background_image(config, camera.pixel_width, camera.pixel_height, base=BACKGROUND)
+    camera.background_image = str(image) if image else None
+    camera.init_background()
 
 
 class NarratedScene(Scene):
@@ -469,6 +491,11 @@ class NarratedScene(Scene):
         self.camera.background_color = BACKGROUND
         self.root = paths.in_video()
         self.config = video_config.load(self.root)
+        apply_background(self.camera, self.config)
+        # The band at the bottom that the project keeps free for its subtitles, in scene units,
+        # and the corner of its logo.
+        self.band = self.config.subtitle_band * config.frame_height / 1080
+        self.corner = style.logo_corner(self.config, config.frame_width, config.frame_height)
         self.lang = self.config.lang
         self.script = load_script(self.root)
         self.track = BeatTrack(self.script, self.scene_key)
@@ -520,7 +547,7 @@ class NarratedScene(Scene):
         if slack < -0.05:
             print(f"[pace] {self.scene_key}/{key}: the visuals are {-slack:.2f} s longer than the voice clip")
         self.pause(slack)
-        for issue in layout_issues(self.mobjects):
+        for issue in layout_issues(self.mobjects, band=self.band, corner=self.corner):
             print(f"[layout] {self.scene_key}/{key}: {issue.describe()}")
         self.timeline.append([key, round(start, 4), round(self.time, 4)])
         self.track.cursor += 1

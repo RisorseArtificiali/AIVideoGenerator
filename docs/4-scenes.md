@@ -69,6 +69,7 @@ The complete catalog, with the arguments and the examples, is in [`skills/articl
 - Put a visual on the word that explains it. Use `hold_until`.
 - Use the blocks first. Write geometry by hand only for what no block gives.
 - Keep the area at the top left free: the title of the chapter stays there.
+- Keep the band at the bottom free: the subtitles are there. With the look of the template, the band is 140 pixels at 1080p, which is below `y = -2.9` in the units of a scene. Keep the corner at the top right free too: the logo is there. The blocks keep both free with their default positions.
 - Use `plain()` for text that has `_`, `%`, `&`, `#` or `$`. `T()` reads LaTeX, and these characters are commands.
 - Use the same color for the same thing in the full video.
 - An entrance of 1 to 2 seconds is sufficient.
@@ -87,5 +88,7 @@ At the end of each beat, the scene compares the boxes of the lines of text. `vid
 
 - `out of frame`: a line of text is outside the frame.
 - `overlap`: two lines of text are one on the other.
+- `in the subtitle band`: a line of text is in the band at the bottom (with `subtitle_band`).
+- `under the logo`: a line of text is in the corner at the top right (with a logo).
 
-The verification does not see a line on text, or a visual at a bad position. Look at the contact sheets (`videogen sheet`).
+The verification sees the lines of text only. It does not see a line on text, a color that does not read, or a visual at a bad position: look at the contact sheets (`videogen sheet`). The subtitles are not in these sheets. After the assembly, `videogen sheet --film --quality h` makes sheets from the film, with the subtitles: there you see if a visual is in the band.

@@ -10,13 +10,15 @@ The common arguments:
 
 | Argument | Meaning |
 |---|---|
-| `center=(x, y)` | center of the axes. Default: a little below the center, with space for the title |
+| `center=(x, y)` | center of the axes. Default: a position that keeps the title at the top and the band of the subtitles at the bottom free |
 | `width`, `height` | of the axes, in scene units. The frame is 14.2 by 8 |
 | `y_ticks`, `x_ticks` | the values with a label |
 | `y_fmt`, `x_fmt`, `value_fmt` | functions number to text, for LaTeX: for example `self.lang.percent` |
 | `y_label`, `x_label`, `title` | text in LaTeX form |
 | `note` | text below the chart: the source, or "Sample data" |
 | `legend_entries` | list of `(color, label)`, or `True` to make it from the data |
+
+The default positions of the blocks keep the band at the bottom free (`y < -2.9`) and the corner of the logo at the top right. When you give a `center`, a `height` or a large `width`, the note under the chart and the labels of the axis are the first to enter the band: `videogen check` reports them.
 
 | Block | For | Data |
 |---|---|---|
@@ -67,4 +69,4 @@ self.play(FadeIn(chart.labels))
 
 ## Limits of the automatic verification
 
-`videogen check` compares the boxes of the lines of text. It finds text out of the frame and text on text. It does not see a line on text, a color that does not read, or a visual at the wrong position: look at the contact sheets.
+`videogen check` compares the boxes of the lines of text. It finds text out of the frame, text on text, text in the band of the subtitles and text under the logo. It does not see a line on text, a color that does not read, or a visual at the wrong position: look at the contact sheets. A visual without text in the band of the subtitles shows only in the sheets of the film (`videogen sheet --film`), because the preview has no subtitles.

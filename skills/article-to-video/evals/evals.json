@@ -4,19 +4,43 @@
     {
       "id": 1,
       "prompt": "Turn this article into a 3Blue1Brown style video: https://example.com/blog/attention-is-all-you-need-explained",
-      "expected_output": "The skill starts with the tools check (doctor), then asks a menu with the language of the video (independent of the article language), the speech engine, the voice and the coverage. It reads the article with `videogen extract`, shows a storyboard for approval, makes the voice clips, verifies the pronunciation with the transcript check, builds the scenes from the blocks, corrects them until `videogen check` is clean and the contact sheets are good, renders the 1080p60 film and reports the output files with their limits.",
+      "expected_output": "The skill verifies the tools (doctor), looks at the link, and shows ONE menu: the mode (the automatic mode first, because the request has only a link), the language with its voice, the speech engine, the coverage. After the menu it asks nothing more. It reads the article with `videogen extract`, writes the narration and `storyboard.md` without submitting them for an approval, makes the voice clips, verifies the pronunciation with the transcript check, builds the scenes from the blocks, corrects them until `videogen check` is clean and the contact sheets are good, renders the 1080p60 film, and ends with a report that lists the decisions that it took after the menu.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "ho questa nota tecnica in inglese (incollata qui sotto), me la fai diventare un video spiegato in italiano? non troppo lungo, max 4 minuti. https://example.org/papers/notes.pdf",
-      "expected_output": "The user writes in Italian and wants a short video. The menu offers Italian as the language of the video (the source is in English: the skill says that the two languages are independent) and the short coverage. The storyboard has 3 to 5 chapters and is approved before the code.",
+      "expected_output": "The user writes in Italian and wants a short video. The menu is in Italian and offers the short coverage. Each option of the language joins the language and a voice of that language (for example «Italiano · it-IT-IsabellaNeural»), and the menu says that the language of the video is independent of the language of the source. With the automatic mode the storyboard has 3 to 5 chapters, is saved in `storyboard.md`, and the skill continues without asking for an approval.",
       "files": []
     },
     {
       "id": 3,
       "prompt": "fammi un video animato da questo documento, la voce la registro io",
       "expected_output": "The menu offers 'My own recordings' as the engine. The skill makes the script with the IDs of the beats, waits for the recordings of the user, adopts them with `videogen voice-adopt`, and continues with the scenes.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "fammi un video da questo post https://x.com/example/status/9876543210 (è una risposta a un articolo lungo)",
+      "expected_output": "Before the menu the skill looks at the link, sees a reply to a longer article, and asks which of the two is the source, in a menu of its own in the first minutes. It then shows the main menu and starts the project with the source that the user chose. After the menu it asks nothing more.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Voglio un video da questo articolo, ma con il mio taglio: lo costruiamo insieme. https://example.com/blog/retrieval-evaluated . Sul punto 3 la penso diversa dall'autore, e ho un esempio mio da aggiungere. C'è anche questo paper che dà un numero utile: https://example.org/papers/metrics.pdf",
+      "expected_output": "The menu offers the personalized mode first, because the request tells an opinion and a purpose. After the menu the skill asks on which points of the article the video must focus. It then brainstorms the cut one question at a time (viewer, angle, structure, length, additions), with a recommended answer for each question. It saves the example of the user in `build/source/user-notes.md` and integrates it in the narration where it serves best. It reads the paper and uses its number as a light enrichment: a few beats with the source on the screen, and no chapter for the paper. It then runs a grill me on the plan (inclusion, cut, proportions, truth, limits) until the user confirms. It writes `storyboard.md` and goes to the end without an approval of the storyboard. The report says where the content of the user is and which beats come from the paper.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "make a video in Italian from this article: https://example.com/post/kv-cache",
+      "expected_output": "Each option of the menu joins the language and a voice of that language: the Italian options have Italian voices. The voice of the video speaks the language of the video, and the voice is never of another language.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "make a 3Blue1Brown style video from this article: https://example.com/blog/small-models",
+      "expected_output": "The project has the look of the template as `videogen new` writes it in `video.toml` (the sections `[style]` and `[subtitles]`): the skill asks nothing about the look and keeps the two sections. The scenes keep the band at the bottom and the corner of the logo free; when `videogen check` reports text in the band or under the logo, the skill corrects the scene. After `videogen assemble`, the skill opens the sheets of the film (`videogen sheet --film --quality h`): each frame has the background, the logo at the top right and its subtitle in the band, with no content under the subtitles. The report says that the look of the film was verified.",
       "files": []
     }
   ]

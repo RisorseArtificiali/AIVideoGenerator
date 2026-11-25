@@ -17,7 +17,7 @@ class Charts(NarratedScene):
             self.title("b1", until="column chart")
             chart = column_chart(
                 ["A", "B", "C", "D"], [42, 58, 35, 71], (0, 80), y_ticks=[0, 20, 40, 60, 80], y_fmt=percent, y_label="score",
-                x_label="condition", value_fmt=percent, title="Sample data: four conditions", center=(0.4, -0.7), width=5.6, height=3.2,
+                x_label="condition", value_fmt=percent, title="Sample data: four conditions", width=5.6, height=3.2,
             )
             self.play(*[FadeIn(part, shift=UP * 0.06) for part in chart.shell()], run_time=1.4)
             self.play(LaggedStart(*[GrowFromEdge(piece, DOWN) for piece in chart.marks], lag_ratio=0.15), run_time=1.4)
@@ -57,7 +57,7 @@ class Charts(NarratedScene):
             self.play(*[FadeIn(part, shift=UP * 0.06) for part in chart.shell()], run_time=1.2)
             self.play(*[Create(series) for series in chart.marks], run_time=1.5)
             self.hold_until("b4", "dashed line", lead=0.2)
-            self.play(Create(chart.reference), run_time=0.9)
+            self.play(Create(chart.reference), run_time=0.6)
 
         with self.beat("b5"):
             self.clear_stage()
