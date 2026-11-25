@@ -28,7 +28,7 @@ The fingerprint contains the name of the engine, the voice, the speed, and the t
 1. It records the time at the start of the beat.
 2. It runs the animations of the block.
 3. If the voice clip is longer, it waits for the difference. If the visuals are longer, it prints `[pace]`.
-4. It compares the boxes of the lines of text and prints `[layout]`.
+4. It compares the boxes of the lines of text and prints `[layout]`: text out of the frame, text on text, text in the band of the subtitles, text under the logo.
 5. It adds the beat to the time line of the scene.
 
 `hold_until()` reads the time of the phrase in the data of step 1, and waits until that time.
@@ -49,7 +49,7 @@ At the end of the scene, the time line is saved in `build/timing/<quality>/<scen
 2. Compares the fingerprint of the time line with the fingerprint of the narration. If they are different, the video is older than the narration: the command stops and gives the correction.
 3. Makes the audio track of the scene: each clip at its start time.
 4. Joins the videos of the scenes, and adds the audio. A filter sets the loudness to -16 LUFS.
-5. Groups the timed words in subtitle lines, and writes the `.srt` file.
+5. Groups the timed words in subtitle lines. With the section `[subtitles]` of `video.toml`, it draws the subtitles into the film. Without the section, it writes the `.srt` file.
 
 ## The folders of the tools
 
@@ -63,6 +63,14 @@ The tools are in the folder `.tools` of the repository: they stay with the proje
 
 `videogen` adds the folder of TeX Live to the `PATH` when the theme starts. Manim finds `latex` and `dvisvgm` there.
 
+## The look of the videos
+
+The folder `media` of the repository has the background, the logo and the font of the look of the videos. `videogen/templates/look.toml` names them and gives the sizes. `videogen new` copies the two sections of that file into the `video.toml` of a new project.
+
+When a scene starts, `videogen/style.py` composes the background with the logo at the exact size of the render, in `build/style/` of the project: Manim does not resize a background image, it cuts it to the pixels of the render. The scenes of a video render at the same time, so the image takes its place in one operation.
+
+`videogen check` reports the lines of text in the band of the subtitles, and under the logo. `videogen sheet --film` makes the contact sheets from the film in `out/`: they show the subtitles, thus you see the complete look of each beat.
+
 ## The code
 
 | Module | Content |
@@ -70,12 +78,13 @@ The tools are in the folder `.tools` of the repository: they stay with the proje
 | `videogen/cli.py` | the commands |
 | `videogen/theme.py` | the palette, the LaTeX template, the drawing helpers, the chart kit, `NarratedScene`, the verification of the layout |
 | `videogen/blocks.py` | the blocks: charts, diagrams, text |
+| `videogen/subtitles.py` | the line breaks of the subtitles, the `.srt` file, the subtitles drawn into the film |
+| `videogen/style.py` | the look of a video project: the background with the logo, and the corner of the logo |
 | `videogen/speech.py` | the voice clips, the fingerprints, the recordings of the user |
 | `videogen/tts.py` | the speech engines, the `.env` files |
 | `videogen/langs.py` | the languages |
 | `videogen/narration.py` | the load and the verification of `narration.py` |
 | `videogen/config.py` | `video.toml` |
-| `videogen/subtitles.py` | the line breaks of the subtitles, the `.srt` file |
 | `videogen/paths.py` | the folders |
 | `videogen/templates/` | the files of a new video project |
 

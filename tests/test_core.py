@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import manim
 import pytest
 from manim import DOWN
 
@@ -16,11 +15,6 @@ from videogen.tts import load_env
 
 DEMO = Path(__file__).resolve().parent.parent / "examples" / "demo"
 BLUE, ORANGE = theme.SERIES["blue"], theme.SERIES["orange"]
-
-
-@pytest.fixture(scope="session", autouse=True)
-def media_folder(tmp_path_factory):
-    manim.config.media_dir = str(tmp_path_factory.mktemp("media"))   # the LaTeX files stay out of the repository
 
 
 def test_number_formats():
@@ -210,3 +204,60 @@ def test_new_project_from_the_templates(tmp_path):
     assert script.order == ["ch00"] and script.beat_count == 2
     assert video_config.load(folder).resolved_voice == "it-IT-IsabellaNeural"
     assert (folder / "scenes" / "ch00_intro.py").is_file()
+
+
+def test_script_without_a_quality_uses_the_time_of_the_final_render(tmp_path):
+    """Without `--quality`, the command read the timing of the voice in place of a time line, and
+    stopped with an error."""
+    from videogen import cli
+
+    (tmp_path / "video.toml").write_text('title = "T"\nlanguage = "en"\n', encoding="utf-8")
+    (tmp_path / "narration.py").write_text(
+        "from collections import namedtuple\nBeat = namedtuple('Beat', 'key text visual')\nSCENE_ORDER = ['ch00']\n"
+        "CHAPTERS = {'ch00': ('', '')}\n"
+        "NARRATION = {'ch00': [Beat('a1', 'One.', 'a line'), Beat('a2', 'Two.', 'a line')]}\n",
+        encoding="utf-8",
+    )
+    timing = tmp_path / "build" / "timing"
+    (timing / "h").mkdir(parents=True)
+    (timing / "ch00.json").write_text('{"beats": {"a1": {"dur": 1.5}, "a2": {"dur": 2.5}}}', encoding="utf-8")
+    (timing / "h" / "ch00.json").write_text('{"beats": [["a1", 0.5, 2.0], ["a2", 2.0, 4.5]], "total": 4.5}',
+                                            encoding="utf-8")
+    cli.cmd_script(cli.build_parser().parse_args(["script", "--root", str(tmp_path)]))
+    text = (tmp_path / "script.md").read_text(encoding="utf-8")
+    assert "| a1 | 00:00.50 |" in text and "| a2 | 00:02.00 |" in text
+
+
+def test_the_sheets_of_the_film_need_the_film_of_the_last_render(tmp_path):
+    """The frames come from the film. A film at another quality, of another narration, or older
+    than a scene would show an old video."""
+    import json
+    import os
+
+    from videogen import cli
+
+    (tmp_path / "video.toml").write_text('title = "T"\nlanguage = "en"\n', encoding="utf-8")
+    (tmp_path / "narration.py").write_text(
+        "from collections import namedtuple\nBeat = namedtuple('Beat', 'key text visual')\nSCENE_ORDER = ['ch00']\n"
+        "CHAPTERS = {'ch00': ('', '')}\nNARRATION = {'ch00': [Beat('a1', 'One.', 'a line')]}\n", encoding="utf-8",
+    )
+    config, script = video_config.load(tmp_path), load_script(tmp_path)
+    with pytest.raises(RuntimeError, match="No film at quality 'h'"):
+        cli.assembled_film(config, "h", script)
+    out = tmp_path / "out"
+    out.mkdir()
+    film = out / f"{config.out}_1080p.mp4"
+    film.write_bytes(b"")
+    chapters = [{"start": 0.0, "title": ""}]
+    (out / "film.json").write_text(json.dumps({"file": film.name, "chapters": chapters * 2}), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="not a film of this narration"):
+        cli.assembled_film(config, "h", script)
+    (out / "film.json").write_text(json.dumps({"file": film.name, "chapters": chapters}), encoding="utf-8")
+    timeline = tmp_path / "build" / "timing" / "h"
+    timeline.mkdir(parents=True)
+    (timeline / "ch00.json").write_text('{"beats": [["a1", 0.5, 4.0]]}', encoding="utf-8")
+    os.utime(film, (1, 1))
+    with pytest.raises(RuntimeError, match="older than the video of ch00"):
+        cli.assembled_film(config, "h", script)
+    os.utime(timeline / "ch00.json", (1, 1))
+    assert cli.assembled_film(config, "h", script) == (film, {"ch00": 0.0})

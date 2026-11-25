@@ -4,9 +4,11 @@ A video project of AIVideoGenerator.
 
 - `narration.py`: the script, beat by beat
 - `scenes/`: one Manim scene for each chapter (`chNN_name.py`)
-- `video.toml`: language, speech engine, voice
+- `video.toml`: the language, the voice and the look of the video (background, logo, subtitles)
 - `build/`: voice clips, time lines, previews (generated)
-- `out/`: the video, the subtitles, the chapters (generated)
+- `out/`: the video with its subtitles, the chapters (generated)
+
+The video has the look of the template: the background image, the logo at the top right, and the subtitles drawn into the film. The sections `[style]` and `[subtitles]` of `video.toml` define the look. In the scenes, keep the band at the bottom free (`y < -2.9`) and the corner at the top right. The documentation of the template has the details: `docs/3-video-project.md`.
 
 ## Commands
 
@@ -19,6 +21,7 @@ videogen check                # run the scenes: find layout, cue and pace proble
 videogen render --quality l   # preview at 480p
 videogen sheet                # contact sheets: one frame at the end of each beat
 videogen render               # final render at 1080p60
-videogen assemble             # the film, the subtitles, the chapters
+videogen assemble             # the film with its subtitles, the chapters
 videogen script               # script.md: the narration with time codes
+videogen sheet --film --quality h   # contact sheets of the film: with the subtitles
 ```

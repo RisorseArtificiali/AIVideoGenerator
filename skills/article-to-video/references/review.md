@@ -8,6 +8,8 @@ Read this at Step 5 and Step 6 of the skill.
 |---|---|---|
 | `[layout] ... out of frame` | A line of text is outside the frame, or touches the border | Move the object, or make the text smaller |
 | `[layout] ... overlap` | Two lines of text are one on the other | Move one of them, or delete one |
+| `[layout] ... in the subtitle band` | A line of text is in the band at the bottom, where the subtitles are drawn | Move the content up, above `y = -2.9`. With a block, use its default position |
+| `[layout] ... under the logo` | A line of text is in the corner at the top right, where the logo is | Move the text to the left, or down |
 | `[cue]` | The phrase of `hold_until` is not in the clip | Copy the phrase from the text of the beat. If a rule in `spoken_rules.py` changes the words, write the changed words |
 | `[pace]` | The visuals of the beat are longer than the voice clip | Make the animations shorter, or divide the visuals between two beats. The video stays correct: the voice of the next beat starts later |
 
@@ -24,6 +26,14 @@ Open every sheet with the Read tool. For each frame, compare the frame with the 
 - Is the title of the chapter free (top left)?
 
 Correct, then start `check`, `render --quality l` and `sheet` again.
+
+The preview has no subtitles. After the assembly, `videogen sheet --film --quality h` makes the contact sheets of the film: each frame has its subtitle. Open them and verify the look in each frame:
+
+- Are the background and the logo at the top right there?
+- Is the subtitle in the band at the bottom, in the font and the color of the look?
+- Is a visual in the band, under the subtitles, or under the logo?
+
+When a frame is wrong, correct the scene, render only that scene, then start `assemble` and `sheet --film` again.
 
 ## The tests of the voice
 

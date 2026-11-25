@@ -4,3 +4,17 @@ language = "en"
 engine = "edge-tts"
 rate = "+0%"
 out_name = "scene-blocks-tour"
+
+# The look of the video: the background with the logo, the band at the bottom for the subtitles,
+# and the subtitles drawn into the film. The paths are relative to the folder of this project.
+[style]
+background = "../../media/background.png"
+logo = "../../media/logo_risorse.png"
+logo_height = 180
+subtitle_band = 140
+
+[subtitles]
+font = "Inter"
+fonts = "../../media/fonts"
+size = 62
+color = "#FF0000"

@@ -41,6 +41,8 @@ In the scene you have `self.config` (the configuration), `self.lang` (the langua
 - Use the blocks first. For the rest, use the helpers of `videogen.theme`: `T` (LaTeX text), `M` (math), `lines`, `LabeledBox`, `arr` (arrow), `path_arrow`, `stack`, `sweep`, `appear`.
 - `T()` reads LaTeX. Use `plain()` for text with `_`, `%`, `&`, `#` or `$`: these characters are commands for LaTeX.
 - The title of the chapter stays at the top left: keep that area free. Put content at `y < 3.0` on the left side.
+- **The band at the bottom is for the subtitles.** Keep all the content above `y = -2.9`: with the look of the template, the band is 140 pixels at 1080p, and the subtitles are drawn there. The logo is in the corner at the top right: keep free the area with `x > 5.8` and `y > 2.2`. The blocks keep both free with their default positions. When you give a position or a height to a block, or you write geometry by hand, stay above the band.
+- `videogen check` reports the lines of text that are in the band (`[layout] … in the subtitle band`) and under the logo (`[layout] … under the logo`). It does not see a visual without text: the sheets of the film (`videogen sheet --film`, Step 6 of the skill) show the band with its subtitles.
 - Colors: `SERIES["blue"]`, `["orange"]`, `["aqua"]` for data, in this order. `BRIGHT[...]` for diagrams. `INK["secondary"]` and `INK["muted"]` for text of less importance.
 - Keep the same color for the same thing in the full video.
 

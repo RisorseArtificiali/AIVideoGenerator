@@ -22,7 +22,7 @@ class Text(NarratedScene):
             )
             self.play(Create(text.mark), FadeIn(text.text, shift=RIGHT * 0.1), run_time=1.4)
             self.hold_until("d1", "quotation", lead=0.2)
-            self.play(Indicate(text.part(0, 1), color=BRIGHT["yellow"], scale_factor=1.12), run_time=0.9)
+            self.play(Indicate(text.part(0, 1), color=BRIGHT["yellow"], scale_factor=1.12), run_time=0.7)
             self.hold_until("d1", "source", lead=0.2)
             self.play(FadeIn(text.who), run_time=0.8)
 

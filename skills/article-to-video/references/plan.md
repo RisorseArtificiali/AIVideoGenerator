@@ -1,6 +1,6 @@
 # Plan: chapters, storyboard and narration
 
-Read this at Step 2 and Step 3 of the skill.
+Read this at Step 2 and Step 3 of the skill. In the personalized mode, `personalized.md` comes first: the plan follows what the user decided there.
 
 ## 1. Understand the source
 
@@ -9,6 +9,7 @@ As you read, make these notes:
 - The main claim, in one sentence.
 - The parts of the argument, in the order of the source. The order of the source is usually good: the reader of the source and the viewer of the video learn in the same order.
 - Each number that matters, with its source (a table or a figure) and its precision.
+- What the figures add to the text: a number, a limit, a row where another option wins. They are part of the source. A full video reports them, and the screen says that they come from a figure.
 - Each figure: what it shows and which block can redraw it (a chart, a pipeline, a table, a quote).
 - What the source gives as a rumor, an opinion of the author, or a limitation of a study.
 
@@ -46,6 +47,7 @@ Rules:
 - The `visual` note says what is on the screen during the beat. The note is for the user and for the scenes. One screen for each beat.
 - Write the numbers in the format of the language in the text that the voice reads. Write the text for the ear, not for the page: no parentheses, no citations in the middle of a sentence.
 - Do not put in the voice what the viewer can read on the screen.
+- Give each clause its punctuation, and keep the clauses short. The subtitles of the film end a line on the punctuation. After 36 characters they break between two content words, which leaves a line without an end. Thus prefer two short clauses to one long sentence.
 - The voice reads approximately 150 words each minute. A full video of 18 minutes has approximately 2,600 words.
 
 ### Names that the voice reads badly
@@ -59,14 +61,10 @@ Some names are not words of the language of the video: product names, benchmarks
 
 ## 4. The storyboard
 
-Show the storyboard to the user in a short table before you write the scenes:
+Write the storyboard in `storyboard.md` of the project, after `narration.py`. It is the record of the plan: the skill goes on to Step 4 without an approval.
 
 | Chapter | Title | Beats | On screen |
 |---|---|---|---|
 | ch01 | The idea | 9 | a pipeline with a loop, then two stacks |
 
-Add the total of beats and the estimated duration. The user approves the plan here: a change of the narration is inexpensive, a change of the scene code is expensive.
-
-## 5. After the approval
-
-When the user wants changes, change `narration.py` and show the storyboard again. When the user approves, continue with Step 4 of the skill.
+Add the total of beats and the estimated duration. Then list the choices that the user can want to change, each with its beat: a point that comes from a figure, an opinion of the source, what a short video leaves out. In the personalized mode, mark the chapters and the beats that come from the content of the user or from an external source.

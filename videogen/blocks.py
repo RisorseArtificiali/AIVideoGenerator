@@ -15,7 +15,8 @@ import numpy as np
 from manim import *
 
 from videogen.theme import (
-    BRIGHT, INK, SERIES, LabeledBox, T, M, arr, bar, chrome, data_line, hbar, legend, make_axes, marker, path_arrow,
+    BRIGHT, INK, SERIES, STAGE_BOTTOM, LabeledBox, T, M, arr, bar, chrome, data_line, hbar, legend, make_axes,
+    marker, path_arrow,
 )
 
 Color = str
@@ -79,13 +80,16 @@ def _name(label: str, sublabel: str | None) -> VGroup:
 
 def column_chart(
     categories, values, y_range, y_ticks=(), colors=None, y_fmt=str, value_fmt=None, y_label=None, x_label=None,
-    title=None, legend_entries=None, note=None, center=(0.0, -0.7), width=5.4, height=3.6, bar_width=0.42,
+    title=None, legend_entries=None, note=None, center=None, width=5.4, height=3.6, bar_width=0.42,
 ) -> Chart:
     """Columns from a zero baseline. `categories` names the columns, `values` are numbers.
     `y_range` is (minimum, maximum) and starts at 0 for a true bar length.
-    `legend_entries` is a list of (color, label); use True to make it from the colors."""
+    `legend_entries` is a list of (color, label); use True to make it from the colors.
+    Without `center`, the chart stands above the band of the subtitles, with room for the label
+    of the x axis and for the note."""
     count = len(categories)
     colors = colors or [SERIES["blue"]] * count
+    center = center or (0.0, STAGE_BOTTOM + 3.0)
     axes = make_axes([0, count], y_range, width, height, center=center)
     frame = chrome(axes, [0, count], y_range, y_ticks=y_ticks, y_fmt=y_fmt, y_label=y_label)
     marks = VGroup(
@@ -107,12 +111,15 @@ def column_chart(
 
 def ranked_bars(
     rows, x_range, x_ticks=(), x_fmt=str, value_fmt=None, x_label=None, title=None, legend_entries=None, note=None,
-    center=(1.4, -0.5), width=6.8, height=None, thickness=0.42,
+    center=None, width=6.8, height=None, thickness=0.42,
 ) -> Chart:
     """Horizontal bars, the largest first. Each row is (label, sublabel or None, value, color).
-    `x_range` starts at 0 for a true bar length."""
+    `x_range` starts at 0 for a true bar length. Without `height`, 0.8 units per row, up to 3.6.
+    Without `center`, the chart stands on the band of the subtitles, with room for the label of
+    the x axis and for the note."""
     count = len(rows)
-    axes = make_axes(x_range, [0, count], width, height or max(1.6, 0.8 * count), center=center)
+    height = height or max(1.6, min(0.8 * count, 3.6))
+    axes = make_axes(x_range, [0, count], width, height, center=center or (1.4, STAGE_BOTTOM + 1.22 + height / 2))
     frame = chrome(axes, x_range, [0, count], x_ticks=x_ticks, grid="x", x_label=x_label)
     levels = [count - 0.5 - index for index in range(count)]
     marks = VGroup(*[hbar(axes, row[2], level, thickness=thickness, color=row[3]) for row, level in zip(rows, levels)])
@@ -127,13 +134,16 @@ def ranked_bars(
 
 def dot_plot(
     rows, x_range, x_ticks=(), x_fmt=str, value_fmt=None, x_label=None, title=None, legend_entries=None, note=None,
-    center=(1.4, -0.5), width=6.8, height=None,
+    center=None, width=6.8, height=None,
 ) -> Chart:
     """One point for each row, on an axis that does not start at 0. Use it when the values
     are near each other: a bar on a cut axis gives a wrong proportion. Each row is
-    (label, value, color)."""
+    (label, value, color). Without `height`, 0.8 units per row, up to 3.6. Without `center`,
+    the plot stands on the band of the subtitles, with room for the label of the x axis and for
+    the note."""
     count = len(rows)
-    axes = make_axes(x_range, [0, count], width, height or max(1.8, 0.8 * count), center=center)
+    height = height or max(1.8, min(0.8 * count, 3.6))
+    axes = make_axes(x_range, [0, count], width, height, center=center or (1.4, STAGE_BOTTOM + 1.22 + height / 2))
     frame = chrome(axes, x_range, [0, count], x_ticks=x_ticks, grid="x", x_label=x_label)
     levels = [count - 0.5 - index for index in range(count)]
     marks = VGroup(*[marker(axes.c2p(row[1], level), row[2]) for row, level in zip(rows, levels)])
@@ -148,11 +158,14 @@ def dot_plot(
 
 def line_chart(
     series, x_range, y_range, x_ticks=(), y_ticks=(), x_fmt=str, y_fmt=str, x_label=None, y_label=None, title=None,
-    note=None, legend_entries=None, reference=None, center=(0.0, -0.8), width=6.4, height=3.6, markers=True,
+    note=None, legend_entries=None, reference=None, center=None, width=6.4, height=3.6, markers=True,
 ) -> Chart:
     """Line charts with points at the data values. Each series is (label, color, points), and
     each point is (x, y). With one series there is no legend: the title names it.
-    `reference` is (y value, label): a dashed line for a threshold or a level."""
+    `reference` is (y value, label): a dashed line for a threshold or a level.
+    Without `center`, the chart stands above the band of the subtitles, with room for the label
+    of the x axis and for the note."""
+    center = center or (0.0, STAGE_BOTTOM + 3.0)
     axes = make_axes(x_range, y_range, width, height, center=center)
     frame = chrome(axes, x_range, y_range, x_ticks, y_ticks, x_fmt, y_fmt, x_label=x_label, y_label=y_label)
     marks = VGroup()
@@ -192,10 +205,13 @@ class Multiples:
 
 def small_multiples(
     panels, x_range, y_range, x_ticks=(), x_fmt=str, y_ticks=(), y_fmt=lambda value: f"{value:g}", x_label=None,
-    note=None, center=(0.0, -0.9), panel_width=2.4, panel_height=2.4, gap=0.9,
+    note=None, center=None, panel_width=2.4, panel_height=2.4, gap=0.9,
 ) -> Multiples:
     """Each panel is (title, series). `y_range` is one (minimum, maximum) for all the panels,
-    or one for each panel. One y axis for all the panels makes the comparison true."""
+    or one for each panel. One y axis for all the panels makes the comparison true.
+    Without `center`, the panels stand above the band of the subtitles, with room for the title
+    of the x axis and for the note."""
+    center = center or (0.0, STAGE_BOTTOM + 2.7)
     count = len(panels)
     total = count * panel_width + (count - 1) * gap
     left = center[0] - total / 2
@@ -435,10 +451,13 @@ class Table:
         return VGroup(*[self.cell(row, column, value, color) for column, (value, color) in enumerate(zip(values, colors))])
 
 
-def compare_table(columns, rows, centers=(-3.6, 0.6, 4.8), top=2.85, first_row=-0.65, row_step=0.7, left=-6.9) -> Table:
+def compare_table(columns, rows, centers=(-3.6, 0.6, 4.8), top=2.85, first_row=None, row_step=0.7, left=-6.9) -> Table:
     """`columns` are (title, subtitle or None); `rows` are the labels of the rows.
-    The space above the first row is for a drawing that the scene adds: see examples/demo."""
+    The space above the first row is for a drawing that the scene adds: see examples/demo.
+    Without `first_row`, the first row is at -0.65, or lower only when the last row needs the
+    room to stay above the band of the subtitles."""
     centers, rows = tuple(centers), tuple(rows)
+    first_row = max(-0.65, STAGE_BOTTOM + 0.12 + (len(rows) - 1) * row_step) if first_row is None else first_row
     row_y = tuple(first_row - index * row_step for index in range(len(rows)))
     headers = VGroup(*[T(title, size=26).move_to([x, top, 0]) for (title, _sub), x in zip(columns, centers)])
     subheaders = VGroup(*[

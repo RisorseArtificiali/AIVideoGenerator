@@ -6,7 +6,7 @@ Read this when the user selects an engine that is not edge-tts, wants a voice th
 
 `videogen options` lists the engines. Each engine has a `status`: `available` is true when the engine is ready on this computer.
 
-- **edge-tts** is the only engine that the template installs. It is an online service, free, with no key. It is not an official API: it can stop without notice. It sends the text of the narration to the service of Microsoft. Tell this to the user when the source is not public.
+- **edge-tts** is the only engine that the template installs. It is an online service, free, with no key. It is not an official API: it can stop without notice. It sends the text of the narration to the service of Microsoft. The menu of Step 1 in the skill says so to the user when the source is not public.
 - **An engine with an API key** is not in the template. To add one, the template needs code: the procedure is in `docs/5-tts-engines.md`. If the user wants one, stop after the menu and explain what is necessary.
 - **My own recordings**: the user records one audio file for each beat. Continue in this way:
   1. Make the video with `videogen tts` and `videogen script --root <folder>`. The user reads the script from `script.md`: it has the text of each beat and its ID.

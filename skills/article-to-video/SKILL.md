@@ -1,20 +1,23 @@
 ---
 name: article-to-video
-description: Make a narrated explainer video in the 3Blue1Brown style (Manim animation, LaTeX, voice-over) from an article, a paper, a blog post, a document, or notes. Use this skill whenever the user asks for a video, an animated explainer, a "3Blue1Brown style" video, a Manim video, a video from a URL or a text, or a video in a language that they select. Use it even when the user does not say "3Blue1Brown". The skill asks for the source, the language of the video, and the speech engine with menus.
+description: Make a narrated explainer video in the 3Blue1Brown style (Manim animation, LaTeX, voice-over) from an article, a paper, a blog post, a document, or notes. Use this skill whenever the user asks for a video, an animated explainer, a "3Blue1Brown style" video, a Manim video, a video from a URL or a text, or a video in a language that they select. Use it even when the user does not say "3Blue1Brown", and when the user wants to build the video with you: their focus, their content, other sources. The skill shows one menu at the start (automatic or personalized mode, language and voice, speech engine, coverage), then it makes the video to the end.
 ---
 
 # Article to video
 
-Make a narrated video from a source with the AIVideoGenerator template. The work has eight steps. Each step ends when its condition is true. Show a menu (AskUserQuestion) at each point where the user makes a decision, and after each step that the user can want to change.
+Make a narrated video from a source with the AIVideoGenerator template. The work has eight steps. Each step ends when its condition is true.
+
+The user answers at the start, then finds the video ready. Many start the process in the evening and come back in the morning: a question after the first minutes stops the work for hours. Thus collect every question in Step 1. After it, work to the end on your own. When a decision comes up, take the option that agrees with the rules of this skill, and list the decision in the report (Step 7). Stop only when the work cannot continue, and say what is missing. The personalized mode is the exception: there the user builds the plan with you, and that dialogue (Step 3) is made of questions.
 
 ## How the template works
 
 Read this before Step 0. It explains the reasons of the rules below.
 
-- A **video project** is a small folder. It has `narration.py` (the script, beat by beat), `scenes/` (one Manim scene for each chapter) and `video.toml` (language, speech engine, voice).
+- A **video project** is a small folder. It has `narration.py` (the script, beat by beat), `scenes/` (one Manim scene for each chapter) and `video.toml` (the language, the voice, the look).
+- Every video has **the look of the template**: a background image, a small logo at the top right, and the subtitles drawn into the film, in a band at the bottom. `videogen new` writes the look in `video.toml`, in the sections `[style]` and `[subtitles]`. Keep these sections as they are: they give the videos of the user the same identity. Change them only when the user asks for a different look in one video. The scenes keep the band and the corner of the logo free: `references/scenes.md` says how.
 - A **beat** is one or two sentences of the narration: one audio clip. The scene of a chapter shows one beat at a time. The animation continues for the length of the clip. A visual can appear on one word of the clip.
 - The template is the engine. It gives the command line `videogen`, drawing helpers, and **blocks**: charts, diagrams and text screens that are ready to use. Make the scenes from the blocks. Write geometry by hand only for what no block gives.
-- The expensive part is the scene code and its correction. Two things cut that cost: a storyboard that the user approves before the code, and the blocks.
+- The expensive part is the scene code and its correction. Two things cut that cost: a plan fixed before the code, and the blocks. In the automatic mode the plan is yours. In the personalized mode you build it with the user.
 - The language of the video is a decision of the user. It is independent of the language of the source. The narration, the text on the screen, the subtitles and the voice use the language of the video. You translate and explain from the source.
 
 ## Step 0 — The tools
@@ -41,20 +44,20 @@ Condition: `doctor` prints "All the necessary tools are ready."
 
 `tools/setup.sh` puts the tools in the folder of the template, not in the home directory: a sandbox that keeps the folder of the project also keeps the tools. If `doctor` prints a NOTE that the tools are in a different folder, tell the user that a sandbox can delete that folder between two sessions.
 
-## Step 1 — The menu: source, language, engine
+## Step 1 — The first minutes: the source, the menu, the project
 
-Ask the source in the conversation: "Which article, document or text is the source? Give a link or a path." The source can be a URL, a local file, or text that the user pastes.
+Look at the source before the menu. The request usually gives it: a link, a path, or text. If it does not, ask: "Which article, document or text is the source? Give a link or a path." Read enough of the source to know what it is. Some sources need a question, and this is the moment for it: a link to a reply of a longer post (which of the two is the source?), or more than one document when the request does not say which one is the source. Ask that question in a menu of its own. If you cannot read the source at all, stop here and say it: the user is present now, and can paste the text or give another link. Step 2 reads the complete source.
 
-Then show one menu with these questions:
+If the source is not public (a local file, pasted text, an internal page), say before the menu that the voice of the online engine sends the text of the narration to its service. It happens with "My own recordings" too: that list starts from the synthesized clips. The user needs to know it before the choice, and after the menu they may be away. If that is not acceptable, the user can say it now: an engine that keeps the text on the computer needs code in the template (`references/tts-and-languages.md`).
 
-1. **Language of the video.** Read the languages from `videogen options` (field `languages`). Make one option for each language: label = name of the language, description = "Narration, text on the screen and voice in <name>. Default voice: <first voice>". The description must say that the choice is independent of the language of the source. The user can select "Other" for a language that is not in the list: in that case read `references/tts-and-languages.md`.
-2. **Speech engine.** Read the engines from `videogen options` (field `engines`). Make one option for each engine: label = engine name, description = `detail` of the engine. Add the option "My own recordings" with the description "You record each beat: the scenes follow your recordings". An engine that is not available (field `available` is false) is an option with "not available" in its description.
-3. **Voice.** Start `videogen options --online` and read `online_voices` for the selected language. Offer the first three voices of the language (the default voice first) as options. The user can select "Other" and write a voice name. If the engine is "My own recordings", do not ask this question.
+Then show one menu, in the language of the conversation. AskUserQuestion takes four questions at the same time, and the menu is full. The request can already give an answer: for example the language of the video with its voice, or that the user records the voice. Then use that answer and take that question out of the menu. If the request gives the language and a condition on the voice (a female voice, a male voice) but not the voice, keep the question with the voices of that language that satisfy the condition. If only one voice satisfies it, use that voice and take the question out of the menu. Ask the mode always.
+
+1. **Mode.** Two options. "Automatic": "After this menu I work alone to the end. I save the plan in the project, and my decisions are in the report." "Personalized (interactive)": "Before the video we build the plan together: the focus, the cut, your content, other sources. Then I make the video to the end." Put first the mode that agrees with the request: a request with only a link points to the automatic mode, a request that tells an opinion or a purpose points to the personalized mode.
+2. **Language and voice.** One option joins the language and its voice, because the menu cannot ask the voice after the answer on the language. Read the languages from `videogen options` (field `languages`). Make one option for each language, with its first voice (the default): label = "<language> · <voice>", description = "Narration, text on the screen and voice in <language>, with the voice <voice>. This choice is independent of the language of the source." Then, if there are fewer than four options, add the second voice of the first language, of the second language, and so on, until there are four options. Each option has the same description. In the description, say also whether the voice is male or female, when you know it. The user can write a language that is not in the list in "Other": then read `references/tts-and-languages.md`. The user can write another voice in "Other": check that it speaks the language of the video (`videogen options --online` has the voices of each language). If it does not, use the default voice of the language and list the decision in the report.
+3. **Speech engine.** Read the engines from `videogen options` (field `engines`). Make one option for each engine: label = engine name, description = `detail` of the engine. Add the option "My own recordings" with the description "You record each beat: the scenes follow your recordings". An engine that is not available (field `available` is false) is an option with "not available" in its description.
 4. **Coverage.** Options: "Full video (Recommended)" with the description "All the content of the source", and "Short video" with the description "Only the core idea, 2 to 4 minutes".
 
-AskUserQuestion shows all the questions at the same time. Thus offer the voices of the first language of the list. If the user selects a different language, use the default voice of that language and tell the user. The user can write a voice with "Other".
-
-Condition: you know the source, the language of the video, the engine, the voice and the coverage.
+Condition: you know the source, the mode, the language, the voice, the engine and the coverage.
 
 Then start the project. The folder is the folder that the user gave, or `videos/<slug>` in the current directory:
 
@@ -62,7 +65,7 @@ Then start the project. The folder is the folder that the user gave, or `videos/
 videogen new <folder> --language <code> --engine <engine> --voice <voice> --title "<title>"
 ```
 
-With "My own recordings", use `--engine edge-tts` in the command and continue with Step 4 of `references/tts-and-languages.md`.
+With "My own recordings", use `--engine edge-tts` in the command and follow the list "My own recordings" of `references/tts-and-languages.md`, from its point 1: it replaces Step 4. That engine needs the user: the work stops when the recordings are necessary, and starts again when they are there.
 
 ## Step 2 — Read the source
 
@@ -70,18 +73,18 @@ Read the complete source. For a web page, start `videogen extract <url> --root <
 
 For a local file, start `videogen extract <path> --root <folder>`. For pasted text, save it in `build/source/article.md`.
 
+If `extract` cannot read the page (a login, a block), read the page with your tools and save the text in `build/source/article.md`. If you can read only a part of the source (a preview, a page that needs a login), stop and say what you could not read: the user can paste it. A video made on a part of the source would miss the argument, and nobody would know it.
+
 Condition: you know the main claim, the parts of the argument, the numbers and their sources, and what each figure shows.
 
-## Step 3 — The storyboard and the narration
+## Step 3 — The plan: the storyboard and the narration
 
-Read `references/plan.md` and do what it says. In short:
+The plan is made once, here, and it is not submitted for an approval. The user decided at the start how the plan is made, and a question now would stop the work.
 
-1. Plan the chapters: 6 to 12, each with one idea.
-2. Write `narration.py` in the language of the video: the beats of each chapter, with a note on what is on the screen.
-3. Write the first words of each beat in the storyboard. Show the storyboard to the user: the chapters, the number of beats, the estimated duration, and the visual of each chapter.
-4. Ask with a menu: "Is this storyboard approved?" Options: "Approved", "Change the chapters", "Too long", "Too short".
+- **Automatic mode.** Read `references/plan.md` and do what it says. In short: plan the chapters (6 to 12, each with one idea), write `narration.py` in the language of the video, then write `storyboard.md` in the project. If the request brings content of the user or other sources, integrate them as section 4 of `references/personalized.md` says.
+- **Personalized mode.** Read `references/personalized.md` first and do what it says: with the user, it fixes the focus of the video, the cut, and the additions (the content of the user, other sources). Then plan and write `storyboard.md` in the same way.
 
-Condition: the user selected "Approved".
+Condition: `narration.py` and `storyboard.md` are written. In the personalized mode, the user confirmed the plan as `personalized.md` says.
 
 ## Step 4 — The voice
 
@@ -100,8 +103,8 @@ Read `references/scenes.md` and `references/blocks.md`. Write one scene file for
 
 Then correct the scenes with this loop, until the scene is **clean**:
 
-1. `videogen check --root <folder>` runs the scenes without a video. It reports four problems: text out of the frame, text on text, a phrase that the clip does not contain, and visuals longer than the voice. Condition: "The scenes are clean."
-2. `videogen render --quality l --root <folder>` makes a preview. `videogen sheet --root <folder>` makes **contact sheets**: one frame at the end of each beat. Open and look at every sheet with the Read tool. The layout verification finds text problems only. Your eyes find the other problems: a wrong position, a color that does not read, a visual that does not agree with the narration.
+1. `videogen check --root <folder>` runs the scenes without a video. It reports: text out of the frame, text on text, text in the band of the subtitles or under the logo, a phrase that the clip does not contain, and visuals longer than the voice. Condition: "The scenes are clean."
+2. `videogen render --quality l --root <folder>` makes a preview. `videogen sheet --root <folder>` makes **contact sheets**: one frame at the end of each beat. Open and look at every sheet with the Read tool. The layout verification finds text problems only. Your eyes find the other problems: a wrong position, a color that does not read, a visual that does not agree with the narration. The preview has the background and the logo, but not the subtitles: Step 6 shows them.
 3. Correct, then start again.
 
 Show the sheets to the user only if they ask: the sheets are many.
@@ -111,31 +114,42 @@ Condition: `check` is clean and you looked at every sheet of every chapter.
 ## Step 6 — The final video
 
 ```bash
-videogen render --root <folder>            # 1080p60
-videogen assemble --root <folder>          # the film, the subtitles, the chapters
-videogen sync --root <folder>              # voice and video agree
-videogen script --root <folder>            # script.md: the narration with time codes
+videogen render --root <folder>                      # 1080p60
+videogen assemble --root <folder>                    # the film with its subtitles, the chapters
+videogen sync --root <folder>                        # voice and video agree
+videogen script --root <folder>                      # script.md: the narration with time codes
+videogen sheet --film --quality h --root <folder>    # the film, frame by frame, with the subtitles
 ```
 
-The commands make the files in `out/`: the film `.mp4`, the subtitles `.srt`, `chapters.txt` and `voice.wav` (the voice only).
+The commands make the files in `out/`: the film `.mp4` with the subtitles drawn into it, `chapters.txt` and `voice.wav` (the voice only).
 
-Condition: `sync` prints "OK", and the film exists.
+The sheets of the film are in `build/sheets/h-film/`: one frame at the end of each beat, taken from the film. Open and look at every sheet. It is the only place where you see the subtitles and what is under them. In each frame verify:
+
+- the background and the logo at the top right are there;
+- the subtitle is in the band at the bottom, in the font and the color of the look;
+- no content is in the band or under the logo.
+
+When a frame is wrong, correct the scene. Then render only that scene (`videogen render --root <folder> <scene>`), and start `assemble` and this verification again.
+
+Condition: `sync` prints "OK", the film exists, and every sheet of the film shows the look of the template.
 
 ## Step 7 — The report
 
-Tell the user:
+The report ends the work. Tell the user:
 
-1. The path of the film and of `script.md`.
+1. The path of the film, of `script.md` and of `storyboard.md`.
 2. The chapters with their time (from `out/chapters.txt`).
-3. What you verified: layout, pronunciation (with the recognizer), agreement of voice and video. Say that you cannot listen to the audio: the user must hear the voice and the rhythm.
-4. What is approximate: numbers read from figures, illustrative curves. These need a note on the screen.
-5. What is not confirmed in the source: the video shows it as not confirmed.
+3. What you verified: layout, pronunciation (with the recognizer), agreement of voice and video, the look of the film (background, logo, subtitles) on the sheets of the film. Say that you cannot listen to the audio: the user must hear the voice and the rhythm. With "My own recordings", say that the recognizer did not verify the clips of the user.
+4. The decisions that you took after the menu, each with the place where the user can change it: for example a beat that comes from a figure, a name that the voice says in another form, a sentence that you changed for the subtitles, a contradiction in the source.
+5. What is approximate: numbers read from figures, illustrative curves. These need a note on the screen.
+6. What is not confirmed in the source: the video shows it as not confirmed.
+7. In the personalized mode: where the content of the user is in the video, and which beats come from the other sources.
 
-Then ask with a menu: "What do you want to do next?" Options: "Nothing, the video is good", "Another language", "A different voice", "Correct a chapter".
+Then say what the user can ask for now: another language, a different voice, a change in a chapter. Write this in the report. The user reads the report when they come back.
 
 ## Rules for the content
 
-- Report the source correctly. A number that you read from a figure is approximate: put a note on the screen. If the source contradicts itself, tell the user in the report.
+- Report the source correctly. A number that you read from a figure is approximate: put a note on the screen. If the source contradicts itself, follow the version that the rest of the source supports, and tell the user in the report.
 - Show the source of each quotation on the screen.
 - A claim that the source gives as a rumor stays a rumor in the video.
 - Invent no data. When a trend has no numbers, draw illustrative curves and put a note on the screen.

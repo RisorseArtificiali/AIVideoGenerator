@@ -227,5 +227,8 @@ out/
 examples/*/build/
 examples/*/script.md
 
+# AIVideoGenerator: the video projects that the skill makes (videos/<name>): the videos are not part of the project
+videos/
+
 # AIVideoGenerator: the tools that tools/setup.sh installs
 .tools/
