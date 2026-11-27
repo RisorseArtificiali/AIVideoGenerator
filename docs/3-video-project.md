@@ -41,8 +41,8 @@ color = "#FF0000"
 |---|---|---|
 | `title` | the title of the video. The scenes read it in `self.config.title` | the name of the folder |
 | `language` | the language of the video: `en`, `it` | `en` |
-| `engine` | the speech engine: `edge-tts` | `edge-tts` |
-| `voice` | a voice of the engine | the first voice of the language |
+| `engine` | the speech engine: `edge-tts` (online) or `omnivoice` (a local model, with a sample of a voice) | `edge-tts` |
+| `voice` | a voice of the engine. For `omnivoice`: the name of a sample in a folder `voices` | the first voice of the language |
 | `rate` | the speed of the voice: `"+10%"` or `"-5%"` | `"+0%"` |
 | `out_name` | the base name of the output files | the name of the folder |
 

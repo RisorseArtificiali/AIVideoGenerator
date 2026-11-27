@@ -19,7 +19,7 @@ narration.py  ──tts──▶  clip.wav + time of each word  ──▶  Narra
 - `build/audio/<scene>/<beat>.wav`: mono, 16 bit, at 48000 Hz. The long silence at the end is removed.
 - `build/timing/<scene>.json`: for each beat, the text, the fingerprint, the length of the clip, and the time of each word.
 
-The fingerprint contains the name of the engine, the voice, the speed, and the text. `tts` makes a clip again only when the fingerprint changes.
+The fingerprint contains the name of the engine, the voice, the speed, and the text. `tts` makes a clip again only when the fingerprint changes. An engine can add a signature to the fingerprint: `omnivoice` adds the content of the sample of the voice, thus the clips are made again when the sample changes.
 
 ### 2. The scene
 
@@ -60,6 +60,8 @@ The tools are in the folder `.tools` of the repository: they stay with the proje
 | `.tools/venv/` | the Python environment, with the template installed |
 | `.tools/texlive/` | a portable TeX Live. It has only the packages that Manim needs |
 | `.tools/models/whisper/` | the model of the offline speech recognizer |
+| `.tools/venv-omnivoice/` | optional: the Python environment of the local model of speech, with PyTorch |
+| `.tools/models/omnivoice/`, `.tools/models/mms-fa/` | optional: the model of speech, and the model that gives the time of each word |
 
 `videogen` adds the folder of TeX Live to the `PATH` when the theme starts. Manim finds `latex` and `dvisvgm` there.
 
@@ -81,7 +83,10 @@ When a scene starts, `videogen/style.py` composes the background with the logo a
 | `videogen/subtitles.py` | the line breaks of the subtitles, the `.srt` file, the subtitles drawn into the film |
 | `videogen/style.py` | the look of a video project: the background with the logo, and the corner of the logo |
 | `videogen/speech.py` | the voice clips, the fingerprints, the recordings of the user |
-| `videogen/tts.py` | the speech engines, the `.env` files |
+| `videogen/tts/__init__.py` | the interface of the speech engines (`Engine`, `Clip`), the engine `edge-tts`, the `.env` files |
+| `videogen/tts/omnivoice.py` | the engine `omnivoice`: the samples of the voices, the dialogue with its worker |
+| `videogen/tts/omnivoice_worker.py` | the process that operates the model in its own environment: the audio, the silences, the time of the words |
+| `videogen/tts/numbers.py` | the numbers in words, for the engines that do not read digits |
 | `videogen/langs.py` | the languages |
 | `videogen/narration.py` | the load and the verification of `narration.py` |
 | `videogen/config.py` | `video.toml` |

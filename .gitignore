@@ -232,3 +232,7 @@ videos/
 
 # AIVideoGenerator: the tools that tools/setup.sh installs
 .tools/
+
+# AIVideoGenerator: the samples of the voices of the engine omnivoice are personal data. Only the README is in git.
+voices/*
+!voices/README.md

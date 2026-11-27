@@ -16,6 +16,16 @@ Start `tools/setup.sh` in the folder of the template. If a package does not inst
 - No network connection.
 - A system without Pango or Cairo: Manim needs these libraries. On Fedora: `sudo dnf install pango cairo`.
 
+A line `OPTIONAL speech engine omnivoice` is not a problem: that engine is optional. To install it, start `tools/setup-omnivoice.sh`.
+
+## OmniVoice: "has no voice", "the worker stopped", "no voice for this text"
+
+- "OmniVoice has no voice '…'": there is no sample with that name in a folder `voices`. The error lists the voices that are there. A voice of `edge-tts` is not a voice of `omnivoice`: put a sample of a voice in `voices/<name>.wav`, with its transcript in `voices/<name>.txt`.
+- "the worker of OmniVoice stopped" or "is not ready": the model does not load. Start the worker by hand to read the error, with `--check`: see [Speech engines](5-tts-engines.md).
+- "The model gave no voice for this text": the model returned silence. Change the text a little, or change the sample.
+- The voice says all the vowels closed (in Italian, *è* sounds like a closed *e*): the sample has few open vowels. Record a sentence with open vowels and closed vowels, and change the sample: see "A voice: a sample and its transcript" in [Speech engines](5-tts-engines.md).
+- The voice is slow, and stops at each comma: the model copies the pauses and the speed of the sample. Record the sample again without pauses at the commas, make the pauses of the file shorter, or set `rate` in `video.toml` (for example `rate = "+20%"`).
+
 ## The voice: "No audio was received"
 
 `edge-tts` did not get audio from the service. The causes are:
@@ -80,7 +90,7 @@ You did not render that scene at that quality. Start `videogen render --quality 
 
 ## The tools are gone between two sessions
 
-The tools are in the folder `.tools` of the repository. If that folder is gone, the sandbox does not keep the folder of the repository. The command `git clean -fdx` also deletes that folder. In these cases, start `tools/setup.sh` again. If `AIVIDEOGEN_TOOLS` points to a folder outside the project, a sandbox can delete that folder. Remove the variable, then start `tools/setup.sh` again.
+The tools are in the folder `.tools` of the repository. If that folder is gone, the sandbox does not keep the folder of the repository. The command `git clean -fdx` also deletes that folder. In these cases, start `tools/setup.sh` again, then `tools/setup-omnivoice.sh` if you use the engine `omnivoice`. The samples of the voices are in the folder `voices` of the repository: they stay. If `AIVIDEOGEN_TOOLS` points to a folder outside the project, a sandbox can delete that folder. Remove the variable, then start `tools/setup.sh` again.
 
 ## The offline recognizer does not read a file
 

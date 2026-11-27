@@ -33,6 +33,16 @@ The tools are the Python environment of the template, a portable TeX Live, and t
 
    `--online` sends one short sentence to the speech service for each language.
 
+## The optional engine: OmniVoice
+
+The voice of `edge-tts` is an online service. The engine `omnivoice` is a model on your computer: it reads the text with a sample of a voice, for example your voice. Nothing leaves the computer. Install it only if you want it:
+
+```bash
+tools/setup-omnivoice.sh
+```
+
+The install downloads approximately 11 GB in the folder `.tools`: the environment `venv-omnivoice` (with PyTorch), `models/omnivoice` and `models/mms-fa`. The model needs a GPU for a fast voice. The details are in [Speech engines](5-tts-engines.md).
+
 ## The tools folder
 
 ```
@@ -43,11 +53,13 @@ AIVideoGenerator/
     └── models/whisper/    the model of the offline speech recognizer
 ```
 
+With the optional engine, the folder has also `venv-omnivoice/`, `models/omnivoice/` and `models/mms-fa/`.
+
 - The folder `.tools` is in the `.gitignore` file of the repository. It stays out of git.
 - The tools stay with the project. A sandbox that keeps the folder of the project also keeps the tools.
 - A new clone of the repository has no tools. Start `tools/setup.sh` in the new clone.
 - The Python environment has the path of the repository in its files. If you move the repository to a different folder, start `tools/setup.sh` again in the new location.
-- To remove the tools, delete the folder `.tools`. `tools/setup.sh --fresh` does this, then installs again.
+- To remove the tools, delete the folder `.tools`. `tools/setup.sh --fresh` does this, then installs again. The install of `omnivoice` is gone too: start `tools/setup-omnivoice.sh` again. The samples of the voices are in the folder `voices` of the repository: they stay.
 
 The previous version put the tools in `~/.cache/aivideogen`. That folder is not necessary. You can delete it.
 
@@ -76,6 +88,9 @@ The install puts `videogen` in `.tools/venv/bin/`. This folder is usually not on
 | `magick` (ImageMagick) | no | necessary for `videogen sheet` |
 | TeX Live, and the LaTeX compilation | yes | `tools/setup.sh` |
 | speech engine `edge-tts` | yes | the package `edge-tts` |
+| speech engine `omnivoice` | no | `tools/setup-omnivoice.sh` |
+
+An optional engine is on a line `OPTIONAL` when it is not installed. It is not a problem.
 
 `videogen doctor --fix` starts `tools/setup.sh` when a necessary item is missing.
 
@@ -84,7 +99,7 @@ If the tools are not in the folder of the repository, `doctor` prints a NOTE: a 
 ## Update
 
 1. Go to the folder of the repository. Get the new version: `git pull`.
-2. Start `tools/setup.sh` again. It updates the Python environment, and keeps TeX Live and the model.
+2. Start `tools/setup.sh` again. It updates the Python environment, and keeps TeX Live and the model. If you use the engine `omnivoice`, start `tools/setup-omnivoice.sh` too.
 3. Start `videogen selftest` to make sure that the pipeline operates on your computer.
 
 ## Other systems

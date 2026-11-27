@@ -56,9 +56,11 @@ class VideoConfig:
     def resolved_voice(self) -> str:
         if self.voice:
             return self.voice
-        voices = self.lang.voices.get(self.engine)
+        engine = ENGINES[self.engine]
+        voices = self.lang.voices.get(self.engine) or engine.voices(self.lang, self.root)
         if not voices:
-            raise ValueError(f"The engine '{self.engine}' has no voice for the language '{self.language}'. Set a voice in video.toml.")
+            raise ValueError(f"The engine '{self.engine}' has no voice for the language '{self.language}'. "
+                             f"Set a voice in video.toml. {engine.voices_help}".strip())
         return voices[0]
 
 

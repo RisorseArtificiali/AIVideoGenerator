@@ -414,7 +414,8 @@ def cmd_options(args):
         data["languages"].append({"code": code, "name": language.name, "voices": {engine.id: engine.voices(language) for engine in ENGINES.values()}})
     for engine in ENGINES.values():
         status = engine.status()
-        data["engines"].append({"id": engine.id, "name": engine.name, "available": status.available, "detail": status.detail})
+        data["engines"].append({"id": engine.id, "name": engine.name, "available": status.available, "detail": status.detail,
+                                "optional": engine.optional, "voices_help": engine.voices_help})
     if args.online:
         online = {}
         for code in langs.LANGS:
@@ -574,7 +575,11 @@ def cmd_doctor(args):
         line("LATEX_OK" in done.stdout, "LaTeX compilation", "MathTex compiles" if "LATEX_OK" in done.stdout else "MathTex does not compile: " + done.stderr.strip()[-300:])
     for engine in ENGINES.values():
         status = engine.status()
-        line(status.available, f"speech engine {engine.id}", status.detail)
+        if engine.optional:
+            # An optional engine has an installer of its own: when it is not there, it is not a problem.
+            print(f"{'OK      ' if status.available else 'OPTIONAL '}speech engine {engine.id}: {status.detail}")
+        else:
+            line(status.available, f"speech engine {engine.id}", status.detail)
     if args.online:
         edge = ENGINES["edge-tts"]
         for language in langs.LANGS.values():
@@ -634,6 +639,30 @@ def _normalize(text: str) -> str:
     return " ".join("".join(character if character.isalnum() else " " for character in text.lower()).split())
 
 
+def _numbers_in_words(text: str, language: str) -> str:
+    """The text with the numbers in words (Italian and English). The text itself when the package
+    num2words is not installed, or when the language has no numbers in words."""
+    try:
+        from videogen.tts.numbers import spoken_text
+
+        return spoken_text(text, language)
+    except (ImportError, ValueError, OverflowError, NotImplementedError):
+        return text
+
+
+def _similarity(heard: str, language: str, *texts: str) -> float:
+    """How much the text of the recognizer agrees with the script. `texts` are the forms of the
+    text of a beat: as the voice reads it, and as it is written (the rules of spoken_rules.py can
+    change it). The recognizer writes a number as digits or as words, as it likes, and an engine
+    can read the numbers in words: each text is compared as it is, and with the numbers in words.
+    The best comparison is the one that counts."""
+    from difflib import SequenceMatcher
+
+    in_words = _numbers_in_words(heard, language)
+    comparisons = [(text, heard) for text in texts] + [(_numbers_in_words(text, language), in_words) for text in texts]
+    return max(SequenceMatcher(None, _normalize(wanted), _normalize(found)).ratio() for wanted, found in comparisons)
+
+
 def cmd_transcript(args):
     """Transcribe the voice clips with an offline speech recognizer, and compare the result
     with the script. This is how you verify the pronunciation of names: you cannot hear the clips."""
@@ -652,7 +681,8 @@ def cmd_transcript(args):
                 check=True, capture_output=True,
             ).stdout
             audio = np.frombuffer(raw, dtype=np.float32)
-            expected.append((cursor, cursor + len(audio) / 16000, f"{scene}/{beat.key}", timing["beats"][beat.key].get("spoken") or beat.text))
+            entry = timing["beats"][beat.key]
+            expected.append((cursor, cursor + len(audio) / 16000, f"{scene}/{beat.key}", entry.get("spoken") or beat.text, beat.text))
             clips.extend([audio, np.zeros(int(gap * 16000), dtype=np.float32)])
             cursor += len(audio) / 16000 + gap
     with warnings.catch_warnings():
@@ -665,11 +695,10 @@ def cmd_transcript(args):
         # audio library that Manim uses.
         segments, _ = model.transcribe(np.concatenate(clips), language=config.language, beam_size=5, word_timestamps=True)
         words = [(word.start, word.end, word.word.strip()) for segment in segments for word in (segment.words or [])]
-    from difflib import SequenceMatcher
     rows = []
-    for start, end, label, spoken_text in expected:
+    for start, end, label, spoken_text, written_text in expected:
         heard = " ".join(word for begin, finish, word in words if start <= (begin + finish) / 2 < end)
-        rows.append((SequenceMatcher(None, _normalize(spoken_text), _normalize(heard)).ratio(), label, spoken_text, heard))
+        rows.append((_similarity(heard, config.language, spoken_text, written_text), label, spoken_text, heard))
     for ratio, label, spoken_text, heard in sorted(rows):
         if ratio < args.threshold or args.show:
             print(f"[{ratio:.2f}] {label}: {heard}" + ("" if ratio >= args.threshold else f"\n       script: {spoken_text}"))

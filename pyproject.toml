@@ -22,6 +22,8 @@ dependencies = [
 qa = ["faster-whisper>=1.1"]
 # Reads a web article and changes it to text and figures.
 extract = ["trafilatura>=1.12"]
+# The speech engine omnivoice writes the numbers in words: tools/setup-omnivoice.sh installs this extra.
+omnivoice = ["num2words>=0.5"]
 dev = ["pytest>=8"]
 
 [project.scripts]
