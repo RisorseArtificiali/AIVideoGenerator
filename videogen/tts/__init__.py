@@ -5,10 +5,12 @@ GPU), write a subclass of Engine and put it in ENGINES. See docs/5-tts-engines.m
 from __future__ import annotations
 
 import asyncio
+import io
 import os
 import re
 import subprocess
 import tempfile
+import wave
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -32,12 +34,25 @@ class Status:
 
 
 def decode_audio(path: Path) -> np.ndarray:
-    """Any audio file to mono float32 at SAMPLE_RATE."""
-    raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", str(path), "-f", "f32le", "-ac", "1", "-ar", str(SAMPLE_RATE), "-"],
-        check=True, capture_output=True,
-    ).stdout
-    return np.frombuffer(raw, dtype=np.float32).copy()
+    """Any audio file to mono float32 at SAMPLE_RATE: the mean of its channels.
+
+    The file goes through ffmpeg as a WAV in a pipe, with its channels side by side. The change to
+    mono of ffmpeg (`-ac 1`) is not the mean: it multiplies each channel by 0.707. A stereo file
+    gains 3 decibels, and a loud recording clips in a file of 16 bits.
+    """
+    try:
+        raw = subprocess.run(
+            ["ffmpeg", "-v", "error", "-i", str(path), "-f", "wav", "-c:a", "pcm_s16le", "-ar", str(SAMPLE_RATE), "-"],
+            check=True, capture_output=True,
+        ).stdout
+    except subprocess.CalledProcessError as error:
+        reason = error.stderr.decode("utf-8", "replace").strip()[-200:]
+        raise RuntimeError(f"ffmpeg does not read '{path}': {reason}") from error
+    with wave.open(io.BytesIO(raw)) as handle:
+        # The file comes from a pipe: its length is not in the header, so all the frames are read.
+        frames = np.frombuffer(handle.readframes(handle.getnframes()), dtype="<i2").astype(np.float32) / 32768
+        channels = handle.getnchannels()
+    return frames.reshape(-1, channels).mean(axis=1)
 
 
 class Engine:

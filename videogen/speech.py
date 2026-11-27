@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import subprocess
 import wave
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -15,7 +14,7 @@ import numpy as np
 from videogen import paths
 from videogen.config import VideoConfig
 from videogen.narration import Script
-from videogen.tts import SAMPLE_RATE, Engine
+from videogen.tts import SAMPLE_RATE, Engine, decode_audio
 
 TAIL_KEEP = 0.14   # seconds of silence kept after the last word
 FLOOR = 0.004      # amplitude below which a sample is silence
@@ -142,11 +141,7 @@ def adopt_recordings(script: Script, config: VideoConfig, folder: Path, force: b
             skipped += 1
             log(f"Skip (already a recording; use --force): {path.name}")
             continue
-        raw = subprocess.run(
-            ["ffmpeg", "-v", "error", "-i", str(path), "-f", "f32le", "-ac", "1", "-ar", str(SAMPLE_RATE), "-"],
-            check=True, capture_output=True,
-        ).stdout
-        samples = np.frombuffer(raw, dtype=np.float32).copy()
+        samples = decode_audio(path)
         loud = np.flatnonzero(np.abs(samples) > FLOOR)
         if loud.size == 0:
             raise ValueError(f"{path.name} has no sound")
