@@ -16,15 +16,17 @@ Start `tools/setup.sh` in the folder of the template. If a package does not inst
 - No network connection.
 - A system without Pango or Cairo: Manim needs these libraries. On Fedora: `sudo dnf install pango cairo`.
 
-A line `OPTIONAL speech engine omnivoice` is not a problem: that engine is optional. To install it, start `tools/setup-omnivoice.sh`.
+A line `OPTIONAL speech engine omnivoice` is not a problem: that engine is optional. To install it, start `tools/setup-omnivoice.sh`, or ask the skill `omnivoice-voice` to do it.
 
 ## OmniVoice: "has no voice", "the worker stopped", "no voice for this text"
 
-- "OmniVoice has no voice '…'": there is no sample with that name in a folder `voices`. The error lists the voices that are there. A voice of `edge-tts` is not a voice of `omnivoice`: put a sample of a voice in `voices/<name>.wav`, with its transcript in `voices/<name>.txt`.
+- "OmniVoice has no voice '…'": there is no sample with that name in a folder `voices`. The error lists the voices that are there. A voice of `edge-tts` is not a voice of `omnivoice`: make a voice from your recordings with `videogen voice-prepare`, or put a sample of a voice in `voices/<name>.wav`, with its transcript in `voices/<name>.txt`.
 - "the worker of OmniVoice stopped" or "is not ready": the model does not load. Start the worker by hand to read the error, with `--check`: see [Speech engines](5-tts-engines.md).
 - "The model gave no voice for this text": the model returned silence. Change the text a little, or change the sample.
-- The voice says all the vowels closed (in Italian, *è* sounds like a closed *e*): the sample has few open vowels. Record a sentence with open vowels and closed vowels, and change the sample: see "A voice: a sample and its transcript" in [Speech engines](5-tts-engines.md).
-- The voice is slow, and stops at each comma: the model copies the pauses and the speed of the sample. Record the sample again without pauses at the commas, make the pauses of the file shorter, or set `rate` in `video.toml` (for example `rate = "+20%"`).
+- The voice says all the vowels closed (in Italian, *è* sounds like a closed *e*): the sample has few open vowels. Record one or two sentences with open vowels and closed vowels, and make the voice again: see "A voice: a sample and its transcript" in [Speech engines](5-tts-engines.md). With two sentences, read both: one sentence alone can close vowels elsewhere. The skill `omnivoice-voice` compares the candidates with you.
+- The voice is slow, and stops at each comma: the model copies the pauses and the speed of the sample. `videogen voice-prepare` makes the long pauses of the recordings short: make the voice again from the recordings. Then compare the speeds by ear with `videogen voice-compare <name> --rates +0%,+20%,+32%`, and write the speed in `voices/<name>.toml`.
+- `videogen voice-compare` says that a clip is different from its sentence: when the sentence has a list of letters or a name, the small recognizer hears it badly. Start the command again with `--model medium`. When the clip is different with the medium model too, listen to it in the file to listen: it can be the clip itself (the engine gives a clip its seed from the text, so the same clip comes again). When several clips are different at `+0%`, the sample is weak: record again. At `+20%` and above, a dense list of single letters can lose words: it is a limit of the model at that speed.
+- "The sample lasts … seconds": the sample must be from 2 to 20 seconds. Give one recording only to `videogen voice-prepare`, or read shorter sentences.
 
 ## The voice: "No audio was received"
 

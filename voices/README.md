@@ -18,10 +18,21 @@ voices/elsa.toml     (optional)
 
 To record a good sample:
 
-1. Read one or two sentences, in the language of the video, with the pauses and the speed that you want to hear in the video. The model copies them: a long pause in the sample gives long pauses in every clip.
-2. Read words with open vowels and words with closed vowels. The model copies the vowels of the sample: a sample with closed vowels only gives a voice with vowels that are too closed. In Italian, *è*, *fretta*, *effetto*, *oggi*, *cuore* are open, and *sempre*, *perché*, *non*, *dopo* are closed. For example: "È spesso un effetto di fretta: oggi non c'è un metodo perfetto, e quello che resta è breve."
+1. Read one or two sentences, in the language of the video. The model copies the speed and the pauses: a long pause in the sample gives long pauses in every clip. `videogen voice-prepare` makes the long pauses of a recording short.
+2. Read words with open vowels and words with closed vowels. The model copies the vowels of the sample: a sample with closed vowels only gives a voice with vowels that are too closed. In Italian, *è*, *fretta*, *effetto*, *oggi*, *cuore* are open, and *sempre*, *perché*, *non*, *dopo* are closed. For example: "È spesso un effetto di fretta: oggi non c'è un metodo perfetto, e quello che resta è breve." When you have two sentences, read both: one sentence alone can close vowels elsewhere.
 3. Use a quiet room and a good microphone. The engine changes the level of the audio, not its quality.
 4. Write the transcript with the normal punctuation. The engine adds the final period, if it is not there.
+
+## From your recordings to a voice
+
+With an agent, ask the skill `omnivoice-voice`: it installs the engine, gives you the sentences to read, and asks you to choose the sample and the speed by ear. These are its two commands, for a use without an agent:
+
+```bash
+videogen voice-prepare my-voice frase-a.wav frase-b.wav --text "<the words of the two recordings>" --rate "+20%"
+videogen voice-compare my-voice --language it --rates +0%,+20%,+32%
+```
+
+The first command makes the voice from your recordings, in any audio format, with the long pauses short. The second command makes one file to listen, with the measures of the pace of each speed. To change the speed of the voice later, change the line of `voices/my-voice.toml`.
 
 Then use the name of the voice in `video.toml`:
 

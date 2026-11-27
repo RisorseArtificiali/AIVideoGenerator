@@ -68,16 +68,46 @@ AIVideoGenerator/
 
 - The folder `voices` of the template has the voices of all the videos. A video project can have its own folder `voices`: it comes first.
 - `videogen options` shows the voices of the engine in `languages[].voices.omnivoice` and in the detail of the engine, with their speed.
+- To make a voice from your recordings: `videogen voice-prepare` (next section), or the skill `omnivoice-voice` with an agent.
 - To use a voice: `engine = "omnivoice"` and `voice = "<name>"` in `video.toml`, or `videogen new <folder> --engine omnivoice --voice <name>`. Without a voice, videogen uses the first voice of the folders.
 - `voice` can also be the path of an audio file, relative to the folder of the video. The transcript is in the text file that has the same name.
 - **The speed of a voice.** When the voice has its `.toml` file, `videogen new` writes that speed as `rate` in the `video.toml` of the new video. Change `rate` in `video.toml` for one video; change the `.toml` file for the next videos. The speed of the voice stays out of git, as its sample.
 
 To record a good sample:
 
-1. Read one or two sentences, in the language of the video, with the pauses and the speed that you want to hear in the video. The model copies them: a long pause in the sample gives long pauses in each clip.
-2. Read words with open vowels and words with closed vowels. The model copies the vowels of the sample: a sample with closed vowels only gives a voice with vowels that are too closed. In Italian, *è*, *fretta*, *effetto*, *oggi*, *cuore* are open, and *sempre*, *perché*, *non*, *dopo* are closed. For example: "È spesso un effetto di fretta: oggi non c'è un metodo perfetto, e quello che resta è breve."
+1. Read one or two sentences, in the language of the video. The model copies the speed and the pauses: a long pause in the sample gives long pauses in each clip. `videogen voice-prepare` makes the long pauses of a recording short.
+2. Read words with open vowels and words with closed vowels. The model copies the vowels of the sample: a sample with closed vowels only gives a voice with vowels that are too closed. In Italian, *è*, *fretta*, *effetto*, *oggi*, *cuore* are open, and *sempre*, *perché*, *non*, *dopo* are closed. For example: "È spesso un effetto di fretta: oggi non c'è un metodo perfetto, e quello che resta è breve." When you have two sentences, read both: one sentence alone can close vowels elsewhere.
 3. Use a quiet room and a good microphone. The engine changes the level of the audio, not its quality.
 4. Write the transcript with the normal punctuation.
+
+### Prepare a voice and compare the candidates
+
+With an agent, the skill `omnivoice-voice` does all of this with you: it installs the engine, gives you the sentences to read, and asks you to choose the sample and the speed by ear. Without an agent, these are the two commands.
+
+**`videogen voice-prepare` makes a voice from your recordings.** It reads any audio format (M4A too), and makes the long pauses of the recordings short: a pause over 0.26 seconds becomes 0.2 seconds. It writes the files of the voice:
+
+```bash
+videogen voice-prepare my-voice recording-a.wav recording-b.wav --text "<the words of the two recordings>" --rate "+20%"
+```
+
+- Without `--root`, the voice goes to the folder `voices` of the template. With `--root <project>`, to the folder `voices` of that video project.
+- `--rate` is optional: it writes `voices/<name>.toml`. `--pauses keep` leaves the recordings as they are.
+- The sample must be from 2 to 20 seconds. A voice that has that name is replaced only with `--force`.
+- The command prints the seconds of each recording before and after, the pace of the person (the words per second), and the voice that videogen uses when a video has no `voice`.
+
+**`videogen voice-compare` makes the voices read test sentences.** You obtain one file to listen, the measures of the pace of each voice, and the verification of the recognizer on each clip:
+
+```bash
+videogen voice-compare my-voice-A my-voice-B --language it
+videogen voice-compare my-voice-A --language it --rates +0%,+20%,+32%
+```
+
+- The file to listen has, for each test sentence, one clip for each voice. It is in `voices/confronto/`, or in the file of `--out`. With `--root <project>`, the voices of that project come before those of the template.
+- The test sentences are in `videogen/templates/voice-test/<language>.txt`: four sentences with what was weak with the model (in Italian: a sentence that starts with "È", numbers, a list of letters, a name). `--text <file>` gives other sentences, one per line.
+- Without `--rates`, each voice reads at its own speed.
+- The command prints, for each voice and each speed: the words per second, the pauses per sentence and the longest pause. Then the recognizer: how many clips say their sentence, and what it heard in the others. The exit code is 1 when a clip is different.
+- `--model medium` is slower and better: use it when the small recognizer does not understand a list of letters or a name.
+- `--labels` puts the name of the voice and its speed before each clip, read by `edge-tts`. It is the only step that uses the network, and it sends only that text.
 
 ### What the engine does
 
@@ -189,7 +219,7 @@ The class is the same. These are the differences:
 - Do not import the libraries of the model at the start of the file: the commands of videogen that do not need the model must operate when the libraries are not installed. Import them in `status()` and in `synthesize()`.
 - Give one entry in `words` for each token of `text` (the text cut on the spaces). Then the subtitles show the text as it is written. `omnivoice.py` is the example.
 
-`decode_audio(path)` changes any audio file to the form that `Clip` needs: mono, float32, at 48000 Hz.
+`decode_audio(path)` changes any audio file to the form that `Clip` needs: mono (the mean of its channels), float32, at 48000 Hz. `videogen voice-adopt` uses it on your recordings.
 
 ## The quality of the voice
 

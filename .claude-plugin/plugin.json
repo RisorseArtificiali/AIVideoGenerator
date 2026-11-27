@@ -1,10 +1,10 @@
 {
   "name": "aivideogenerator",
   "version": "0.1.0",
-  "description": "Make a narrated explainer video in the 3Blue1Brown style from an article, a paper, a document, or notes. The skill shows one menu at the start (automatic or personalized mode, language and voice, speech engine, coverage), then verifies the tools, writes the narration, verifies the scenes, and renders the film.",
+  "description": "Make a narrated explainer video in the 3Blue1Brown style from an article, a paper, a document, or notes. The skill article-to-video shows one menu at the start (automatic or personalized mode, language and voice, speech engine, coverage), then verifies the tools, writes the narration, verifies the scenes, and renders the film. The skill omnivoice-voice installs the local speech engine omnivoice and makes a voice from your recordings, with you.",
   "author": {
     "name": "Risorse Artificiali"
   },
   "homepage": "https://github.com/RisorseArtificiali/AIVideoGenerator",
-  "keywords": ["video", "manim", "3blue1brown", "explainer", "tts", "animation"]
+  "keywords": ["video", "manim", "3blue1brown", "explainer", "tts", "animation", "omnivoice", "voice"]
 }
