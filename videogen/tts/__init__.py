@@ -70,6 +70,11 @@ class Engine:
         An empty string for most engines."""
         return ""
 
+    def default_rate(self, voice: str | None, root: Path | None = None) -> str:
+        """The speed of a voice of the engine, as `videogen new` writes it in `video.toml`. An empty
+        string when the voice has none, as for most engines: the project starts at `+0%`."""
+        return ""
+
     def synthesize(self, text: str, voice: str, rate: str) -> Clip:
         raise NotImplementedError
 

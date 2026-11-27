@@ -332,6 +332,49 @@ def test_the_default_voice_of_the_engine(tmp_path, monkeypatch):
     assert video_config.load(tmp_path).resolved_voice == "mia"
 
 
+def test_a_voice_can_have_its_speed(tmp_path, monkeypatch):
+    """A third file of a voice, `voices/<name>.toml`, gives its speed. A voice without the file has none."""
+    monkeypatch.setattr(paths, "template_root", lambda: tmp_path / "template")
+    voices = tmp_path / "template" / "voices"
+    make_voice(voices, "elsa")
+    make_voice(voices, "mia")
+    engine = ENGINES["omnivoice"]
+    assert engine.default_rate("mia") == "" and engine.default_rate(None) == ""      # no voice has a speed
+    (voices / "mia.toml").write_text('rate = "+32%"\n', encoding="utf-8")
+    assert engine.default_rate("mia") == "+32%" and engine.default_rate("elsa") == ""
+    assert engine.default_rate(None) == ""                                            # the first voice (elsa) has no speed
+    (voices / "elsa.toml").write_text('rate = "-5%"\n', encoding="utf-8")
+    assert engine.default_rate(None) == "-5%"                                         # the default voice is the first one
+    (voices / "elsa.toml").write_text('rate = "fast"\n', encoding="utf-8")
+    with pytest.raises(ValueError, match=r"The rate 'fast' in .*elsa\.toml is not valid"):
+        engine.default_rate("elsa")
+    assert ENGINES["edge-tts"].default_rate("en-US-AndrewNeural") == ""               # the other engines have no speed of a voice
+
+
+def test_a_new_project_takes_the_speed_of_its_voice(tmp_path, monkeypatch, capsys):
+    """`videogen new` writes the speed of the voice in video.toml: each video can then change its `rate`."""
+    monkeypatch.setattr(paths, "template_root", lambda: tmp_path / "template")
+    voices = tmp_path / "template" / "voices"
+    make_voice(voices, "elsa")
+    make_voice(voices, "mia")
+    (voices / "mia.toml").write_text('rate = "+32%"\n', encoding="utf-8")
+
+    def new(name, *options):
+        folder = tmp_path / name
+        folder.mkdir()                                    # the templates of the template make it, when they are there
+        cli.cmd_new(cli.build_parser().parse_args(["new", str(folder), "--language", "it", "--engine", "omnivoice", *options]))
+        return folder, capsys.readouterr().out
+
+    folder, output = new("mine", "--voice", "mia")
+    assert video_config.load(folder).rate == "+32%" and video_config.load(folder).resolved_voice == "mia"
+    assert '+32%' in output and "mia.toml" in output                                  # the project says where the speed comes from
+    folder, _output = new("yours", "--voice", "elsa")
+    assert video_config.load(folder).rate == "+0%"                                     # a voice without a speed
+    folder, _output = new("default")
+    assert video_config.load(folder).rate == "+0%" and video_config.load(folder).resolved_voice == "elsa"
+    assert video_config.load(tmp_path / "mine").rate == "+32%"
+
+
 def test_a_changed_sample_makes_the_clips_again(tmp_path, fake_worker):
     voices = tmp_path / "voices"
     sample = make_voice(voices, "elsa")

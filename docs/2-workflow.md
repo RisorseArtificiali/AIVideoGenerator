@@ -20,7 +20,7 @@ The command makes the folder with:
 
 `--language` is the language of the video: `en` or `it`. It is independent of the language of the source. `--engine` selects the speech engine. `--voice` selects a voice. If you do not give a voice, the engine uses the first voice of the language.
 
-To read the text with a sample of your voice, on your computer, install the optional engine `omnivoice`, then add `--engine omnivoice --voice <name of your sample>`. See [Speech engines](5-tts-engines.md).
+To read the text with a sample of your voice, on your computer, install the optional engine `omnivoice`, then add `--engine omnivoice --voice <name of your sample>`. A voice can have its speed (`voices/<name>.toml`): `videogen new` writes it as `rate` in `video.toml`. See [Speech engines](5-tts-engines.md).
 
 ## Step 2 — Read the source
 

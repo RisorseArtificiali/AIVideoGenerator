@@ -46,18 +46,20 @@ It also installs the package `num2words` in the environment of the tools (the ex
 
 ### A voice: a sample and its transcript
 
-A voice is two files with the same name, in a folder `voices`:
+A voice is two files with the same name, in a folder `voices`, and an optional third file with its speed:
 
 | File | Content |
 |---|---|
 | `voices/<name>.wav` | a sample of the voice, from 2 to 20 seconds. WAV, FLAC, OGG or MP3, at any sample rate |
 | `voices/<name>.txt` | the words of the sample, exactly as the voice says them |
+| `voices/<name>.toml` | optional: the speed of the voice, for example `rate = "+32%"` |
 
 ```text
 AIVideoGenerator/
 ├── voices/
 │   ├── elsa.wav
-│   └── elsa.txt
+│   ├── elsa.txt
+│   └── elsa.toml      (optional)
 └── videos/my-video/
     └── voices/
         ├── narrator.flac
@@ -65,9 +67,10 @@ AIVideoGenerator/
 ```
 
 - The folder `voices` of the template has the voices of all the videos. A video project can have its own folder `voices`: it comes first.
-- `videogen options` shows the voices of the engine in `languages[].voices.omnivoice` and in the detail of the engine.
+- `videogen options` shows the voices of the engine in `languages[].voices.omnivoice` and in the detail of the engine, with their speed.
 - To use a voice: `engine = "omnivoice"` and `voice = "<name>"` in `video.toml`, or `videogen new <folder> --engine omnivoice --voice <name>`. Without a voice, videogen uses the first voice of the folders.
 - `voice` can also be the path of an audio file, relative to the folder of the video. The transcript is in the text file that has the same name.
+- **The speed of a voice.** When the voice has its `.toml` file, `videogen new` writes that speed as `rate` in the `video.toml` of the new video. Change `rate` in `video.toml` for one video; change the `.toml` file for the next videos. The speed of the voice stays out of git, as its sample.
 
 To record a good sample:
 
@@ -82,7 +85,7 @@ To record a good sample:
 - **Pauses and level.** The model copies the pauses and the level of the sample. The engine sets each clip at the level of the clips of `edge-tts`, keeps 0.15 seconds of silence before the first word and after the last one, and makes a pause longer than 0.7 seconds 0.5 seconds long. A breath in a pause stays.
 - **The same clip again.** The model chooses at random. The engine gives it a seed that comes from the text, the voice and the rate. Thus a clip made again is the same clip.
 - **The time of the words.** The model gives the audio only. A second model, MMS_FA, finds the time of each word on the audio. The time of the words of the subtitles and of the cues comes 0.06 seconds before their sound.
-- **The speed.** `rate` in `video.toml` is the speed of the model: `+10%` reads 1.1 times faster.
+- **The speed.** `rate` in `video.toml` is the speed of the model: `+10%` reads 1.1 times faster. A voice can have its own speed (`voices/<name>.toml`), and a new video starts with it.
 - **A process of its own.** The model needs PyTorch, and the tools of the template do not need it. Thus the model operates in the environment `venv-omnivoice`, in a process that `videogen tts` starts at the first clip and stops at the end. `videogen/tts/omnivoice_worker.py` is that process.
 
 ### Rules
@@ -173,6 +176,7 @@ Then:
 | `voices(language, root)` | the voices are not in `videogen/langs.py`, or they can be in the folder `root` of the video project. |
 | `configure(root, language)` | the engine needs the folder of the video project or its language when it reads a text. `videogen tts` calls this method one time, before the first clip. |
 | `signature(voice, rate)` | the voice depends on a file that can change, as a sample. The method returns a short text that identifies the file: `videogen tts` adds it to the fingerprint of each clip, and makes the clips again when the file changes. |
+| `default_rate(voice, root)` | a voice of the engine has its own speed. The method returns it in the form of `rate` (`"+32%"`), or an empty string: `videogen new` writes it in the `video.toml` of the new video. |
 
 ### An engine with a local model on the GPU
 

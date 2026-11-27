@@ -439,7 +439,10 @@ def cmd_new(args):
         raise ValueError(f"Unknown language '{args.language}'. Available: {', '.join(langs.LANGS)}")
     if args.engine not in ENGINES:
         raise ValueError(f"Unknown engine '{args.engine}'. Available: {', '.join(ENGINES)}")
-    config = video_config.VideoConfig(root=folder, title=args.title or folder.name, language=args.language, engine=args.engine, voice=args.voice)
+    # A voice can have its speed (the file voices/<name>.toml of omnivoice): the project starts with it.
+    rate = ENGINES[args.engine].default_rate(args.voice, folder)
+    config = video_config.VideoConfig(root=folder, title=args.title or folder.name, language=args.language, engine=args.engine,
+                                      voice=args.voice, rate=rate or "+0%")
     text = config.lang.text
     templates = paths.template_root() / "videogen" / "templates"
     for source in sorted(templates.rglob("*.tmpl")):
@@ -456,6 +459,9 @@ def cmd_new(args):
     (folder / paths.CONFIG_NAME).write_text(configuration, encoding="utf-8")
     (folder / ".gitignore").write_text("build/\nout/\nscript.md\n", encoding="utf-8")
     print(f"Video project in {folder}: narration.py, scenes/ch00_intro.py, {paths.CONFIG_NAME}")
+    if rate:
+        print(f"Rate {rate}: the speed of the voice {config.resolved_voice}, from voices/{config.resolved_voice}.toml. "
+              f"Change `rate` in {paths.CONFIG_NAME} for this video only.")
     print("Next: videogen extract <url>  (optional), then write narration.py and the scenes, then videogen tts, check, render, assemble.")
 
 

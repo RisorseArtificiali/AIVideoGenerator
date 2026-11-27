@@ -9,7 +9,8 @@ worker reads the model and the sample of the voice on the disk, and does not use
 A voice is a sample of a voice with its transcript: `voices/<name>.wav` and `voices/<name>.txt`,
 in the folder of the video project or in the folder of the template. The model copies the voice,
 and also its pauses and its level: use one or two sentences (2 to 20 seconds), in the language of
-the video.
+the video. A third file, `voices/<name>.toml`, is optional: it gives the speed of the voice
+(`rate = "+32%"`), and `videogen new` writes it in `video.toml`.
 
 `tools/setup-omnivoice.sh` installs the engine. The license of the model is CC-BY-NC.
 """
@@ -29,6 +30,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -240,13 +242,32 @@ class OmniVoiceEngine(Engine):
             return Status(False, "not installed (" + ", ".join(missing) + "). Start tools/setup-omnivoice.sh: about 11 GB.")
         voices = self.voices(self.language, self.project)
         if voices:
-            detail = "voices: " + ", ".join(voices)
+            shown = []
+            for name in voices:
+                rate = self.default_rate(name, self.project)
+                shown.append(f"{name} (rate {rate})" if rate else name)
+            detail = "voices: " + ", ".join(shown)
         else:
             detail = "no voice yet: put a sample of a voice in a folder voices/ (docs/5-tts-engines.md)"
         return Status(True, f"a local model on the {self._machine()}, with a sample of a voice; {detail}")
 
     def voices(self, language, root: Path | None = None) -> list[str]:
         return sample_names(self.folders if self.folders is not None else folders_of(root))
+
+    def default_rate(self, voice: str | None, root: Path | None = None) -> str:
+        """The speed of a voice, from its third file: `voices/<name>.toml`, with `rate = "+32%"`.
+        Without a voice, it is the speed of the first voice of the folders. An empty string when
+        the voice has no file, and when there is no voice."""
+        folders = self.folders if self.folders is not None else folders_of(root)
+        name = voice or next(iter(sample_names(folders)), None)
+        sample = find_sample(name, folders, root) if name else None
+        path = sample.path.with_suffix(".toml") if sample else None
+        if path is None or not path.is_file():
+            return ""
+        value = str(tomllib.loads(path.read_text(encoding="utf-8")).get("rate", "")).strip()
+        if value and not RATE.fullmatch(value):
+            raise ValueError(f"The rate '{value}' in {path} is not valid. Use a value such as '+5%' or '-10%'.")
+        return value
 
     def signature(self, voice: str, rate: str) -> str:
         """The clips change when the sample of the voice changes, or when the worker changes the audio."""
