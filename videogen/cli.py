@@ -202,13 +202,9 @@ def cmd_assemble(args):
             if offset + len(clip) > len(track):
                 raise RuntimeError(f"{scene}/{key}: the voice clip does not fit in its beat.")
             track[offset:offset + len(clip)] += clip
-            # The service gives the time of each word, but usually without the punctuation.
-            # The subtitles show the words of the script when their number agrees.
-            timed = timing["beats"][key]["words"]
-            shown = (timing["beats"][key].get("spoken") or beat_text(script, scene, key)).split()
-            for index, (word_start, word_duration, word) in enumerate(timed):
-                text = shown[index] if len(shown) == len(timed) else word
-                words.append((cursor + start + float(word_start), float(word_duration), text))
+            # The subtitles show the tokens of the script, as they are written.
+            for word_start, word_duration, text in subtitle_words(timing["beats"][key]):
+                words.append((cursor + start + word_start, word_duration, text))
         film.append(track)
         parts.append(video)
         number, title = script.chapters[scene]
@@ -258,11 +254,49 @@ def cmd_assemble(args):
     print(f"\n{final}\n{cursor / 60:.1f} minutes, {len(cues)} subtitle lines. Files in {out}")
 
 
-def beat_text(script, scene: str, key: str) -> str:
-    for beat in script.beats[scene]:
-        if beat.key == key:
-            return beat.text
-    return ""
+def _origins(written: list[str], spoken: list[str]) -> list[int] | None:
+    """For each word that the voice reads, the index of the token of the script that it comes
+    from. None when the correspondence is not sure."""
+    from difflib import SequenceMatcher
+
+    origin = []
+    for tag, first, last, _from, to in SequenceMatcher(None, written, spoken, autojunk=False).get_opcodes():
+        if tag == "equal":
+            origin += range(first, last)
+        elif tag == "replace" and last - first == 1:
+            origin += [first] * (to - _from)           # one token of the script, read in several words
+        elif tag != "delete":                          # "delete": a token that the rules take out
+            return None
+    return origin
+
+
+def subtitle_words(entry: dict) -> list[tuple[float, float, str]]:
+    """The timed words of one beat, for the subtitles: (start, duration, token). The subtitles
+    show the tokens of the script as they are written. The voice reads the text after the rules
+    of `spoken_rules.py`: a rule can change one token in several words ("GPT-5.6" becomes
+    "GPT 5 punto 6"), and the engine gives its own words, usually without the punctuation. A
+    token of the script goes from its first word to its last one. When the words of the voice do
+    not correspond to the tokens, the subtitles show the words of the voice."""
+    words = [(float(start), float(duration), word) for start, duration, word in entry.get("words", [])]
+    written = (entry.get("text") or "").split()
+    spoken = (entry.get("spoken") or "").split()
+    if len(spoken) == len(words):
+        origin = _origins(written, spoken)     # the voice read the text after the rules, one word for each token
+    elif written == spoken and len(written) == len(words):
+        origin = list(range(len(written)))     # no rule changed the tokens, and the voice gives one word for each
+    else:
+        origin = None                          # the engine gives other words: the subtitles show them
+    if origin is None:
+        return words
+    shown, index = [], 0
+    while index < len(origin):
+        last = index
+        while last + 1 < len(origin) and origin[last + 1] == origin[index]:
+            last += 1
+        start, _duration, _word = words[index]
+        shown.append((start, words[last][0] + words[last][1] - start, written[origin[index]]))
+        index = last + 1
+    return shown
 
 
 def cmd_script(args):
