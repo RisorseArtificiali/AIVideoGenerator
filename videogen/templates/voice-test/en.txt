@@ -1,0 +1,8 @@
+# The sentences that `videogen voice-compare` makes the voices read, in English: a question that
+# starts with "It is"; numbers; a list of letters; a name. They are not the sentences that a person
+# reads for a sample: the clone reads text that it did not hear. The lines that start with # do
+# not count. These sentences were not verified as the Italian ones were.
+It is an open question: the heart of the method is missing, and today there is little time to decide.
+By 2027, 42% of the tasks will be long: 1,200 minutes, that is 20 hours of work.
+The three nodes are called A, B and C: A points to B, B to C, and C back to A.
+OpenAI, Google and Microsoft: three names that come back in many videos, and that the voice must say well.

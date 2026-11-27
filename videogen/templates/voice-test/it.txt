@@ -1,0 +1,8 @@
+# The sentences that `videogen voice-compare` makes the voices read, in Italian. One sentence for
+# each thing that was weak with the model (2026-11-27): a sentence that starts with "È"; numbers;
+# a list of letters; a name. They are not the sentences that a person reads for a sample: the
+# clone reads text that it did not hear. The lines that start with # do not count.
+È una domanda aperta: il cuore del metodo non c'è, e oggi resta poco tempo per decidere.
+Nel 2027 il 42% dei compiti sarà lungo: 1.200 minuti, cioè 20 ore di lavoro.
+I tre nodi si chiamano A, B e C: A punta a B, B a C, e C di nuovo ad A.
+OpenAI, Google e Microsoft: tre nomi che tornano spesso nei video, e che la voce deve dire bene.

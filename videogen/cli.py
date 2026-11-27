@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from videogen import __version__, langs, paths, speech
+from videogen import __version__, langs, paths, speech, voices
 from videogen import config as video_config
 from videogen import subtitles
 from videogen.narration import load_script
@@ -406,6 +406,35 @@ def cmd_voice_adopt(args):
     print(f"{adopted} beats adopted, {skipped} skipped. The scenes follow the new length of the clips when they render again.")
 
 
+def cmd_voice_prepare(args):
+    """Make a voice for the engine omnivoice from your recordings: the pauses become short, and the
+    voice goes to the folder `voices` with its transcript and, with --rate, its speed."""
+    voices.prepare(args.root, args.name, [Path(recording) for recording in args.recordings], args.text,
+                    rate=args.rate, cut=args.pauses == "cut", force=args.force)
+
+
+def cmd_voice_compare(args):
+    """Make the voices of omnivoice read test sentences: one file to listen, the measures of the
+    pace of each voice, and the verification of the recognizer on each clip."""
+    engine = ENGINES["omnivoice"]
+    status = engine.status()
+    if not status.available:
+        raise RuntimeError(f"The engine omnivoice is not available: {status.detail}")
+    language = langs.get(args.language)
+    sentences = voices.sentences_of(args.text, language)
+
+    def listener():
+        """The recognizer, when the comparison needs it: after it verifies the voices."""
+        try:
+            return _recognizer(args.model, args.threads)
+        except Exception as error:      # the file to listen is the product: without the recognizer, the clips are not verified
+            print(f"NOTE: {error} The clips are not verified.")
+            return None
+    return voices.compare(engine, args.voices, sentences, rates=voices.rates_of(args.rates), root=args.root, language=language,
+                          out=args.out, labels=ENGINES["edge-tts"] if args.labels else None,
+                          recognizer=None if args.no_check else listener, similarity=_similarity, threshold=args.threshold)
+
+
 def cmd_options(args):
     """The data for the menus of the skill: languages, engines, voices."""
     data = {
@@ -672,13 +701,25 @@ def _similarity(heard: str, language: str, *texts: str) -> float:
     return max(SequenceMatcher(None, _normalize(wanted), _normalize(found)).ratio() for wanted, found in comparisons)
 
 
-def cmd_transcript(args):
-    """Transcribe the voice clips with an offline speech recognizer, and compare the result
-    with the script. This is how you verify the pronunciation of names: you cannot hear the clips."""
+def _recognizer(model: str, threads: int):
+    """The offline speech recognizer of faster-whisper, on the processor. Its model stays with the
+    tools: it downloads the model at the first use."""
     try:
         import faster_whisper
     except ImportError as error:
         raise RuntimeError("The package faster-whisper is not installed. Install the extra 'qa' of the template.") from error
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return faster_whisper.WhisperModel(
+            model, device="cpu", compute_type="int8", cpu_threads=threads,
+            download_root=str(paths.models_root() / "whisper"),   # the model stays with the tools
+        )
+
+
+def cmd_transcript(args):
+    """Transcribe the voice clips with an offline speech recognizer, and compare the result
+    with the script. This is how you verify the pronunciation of names: you cannot hear the clips."""
+    model = _recognizer(args.model, args.threads)
     config = video_config.load(args.root)
     script = load_script(config.root)
     clips, expected, cursor, gap = [], [], 0.0, 0.6
@@ -694,16 +735,12 @@ def cmd_transcript(args):
             expected.append((cursor, cursor + len(audio) / 16000, f"{scene}/{beat.key}", entry.get("spoken") or beat.text, beat.text))
             clips.extend([audio, np.zeros(int(gap * 16000), dtype=np.float32)])
             cursor += len(audio) / 16000 + gap
+    # The recognizer gets the samples directly: its file reader does not agree with the
+    # audio library that Manim uses.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model = faster_whisper.WhisperModel(
-            args.model, device="cpu", compute_type="int8", cpu_threads=args.threads,
-            download_root=str(paths.models_root() / "whisper"),   # the model stays with the tools
-        )
-        # The recognizer gets the samples directly: its file reader does not agree with the
-        # audio library that Manim uses.
         segments, _ = model.transcribe(np.concatenate(clips), language=config.language, beam_size=5, word_timestamps=True)
-        words = [(word.start, word.end, word.word.strip()) for segment in segments for word in (segment.words or [])]
+    words = [(word.start, word.end, word.word.strip()) for segment in segments for word in (segment.words or [])]
     rows = []
     for start, end, label, spoken_text, written_text in expected:
         heard = " ".join(word for begin, finish, word in words if start <= (begin + finish) / 2 < end)
@@ -764,6 +801,8 @@ def build_parser() -> argparse.ArgumentParser:
         ("assemble", cmd_assemble, "join the scenes, add the voice and the subtitles, write the chapters"),
         ("script", cmd_script, "write script.md: the narration with time codes"),
         ("voice-adopt", cmd_voice_adopt, "use your recordings as the voice-over"),
+        ("voice-prepare", cmd_voice_prepare, "make a voice for omnivoice from your recordings"),
+        ("voice-compare", cmd_voice_compare, "compare voices or speeds of omnivoice: the file to listen, the pace, the recognizer"),
         ("selftest", cmd_selftest, "run the full pipeline on the demo video"),
         ("transcript", cmd_transcript, "transcribe the voice clips offline: verify the pronunciation"),
         ("sync", cmd_sync, "verify that voice and video agree in the film"),
@@ -803,6 +842,31 @@ def build_parser() -> argparse.ArgumentParser:
     adopt = commands.choices["voice-adopt"]
     adopt.add_argument("folder", help="the folder of your recordings: <scene>_<beat>.wav")
     adopt.add_argument("--force", action="store_true", help="replace the beats that are already a recording")
+    prepare = commands.choices["voice-prepare"]
+    prepare.add_argument("name", help="the name of the voice")
+    prepare.add_argument("recordings", nargs="+", help="your recordings, in the order of the words: any audio format")
+    prepare.add_argument("--text", required=True, help="the words of the recordings, as the voice says them")
+    prepare.add_argument("--rate", default="", help="the speed of the voice, for example +20%%: videogen new writes it in video.toml")
+    prepare.add_argument("--pauses", choices=("cut", "keep"), default="cut",
+                         help="cut: a pause longer than 0.26 s becomes 0.2 s. keep: the recording does not change (default: cut)")
+    prepare.add_argument("--force", action="store_true", help="replace the voice that has that name")
+    prepare.add_argument("--root", type=Path, default=None,
+                         help="the folder of a video project: the voice goes to its folder voices (default: the folder voices of the template)")
+    compare = commands.choices["voice-compare"]
+    compare.add_argument("voices", nargs="+", help="the voices to compare: names of the folders voices, or paths of samples")
+    compare.add_argument("--rates", default="", help="the speeds of every voice, for example +0%%,+20%%,+32%% (default: the speed of each voice)")
+    compare.add_argument("--language", default="en", help="the language of the voices (default: en)")
+    compare.add_argument("--text", type=Path, default=None,
+                         help="a file with the sentences to read, one per line (default: the test sentences of the template)")
+    compare.add_argument("--root", type=Path, default=None, help="the folder of a video project: its folder voices comes first")
+    compare.add_argument("--labels", action="store_true",
+                         help="before each clip, edge-tts says the name of the voice and its speed (it needs a connection)")
+    compare.add_argument("--out", type=Path, default=None, help="the file to listen (default: voices/confronto/<date and time>-<voices>.wav)")
+    compare.add_argument("--model", default="small", help="size of the offline recognizer: tiny, base, small, medium (default: small)")
+    compare.add_argument("--threads", type=int, default=12, help="processor threads of the recognizer")
+    compare.add_argument("--threshold", type=float, default=voices.THRESHOLD,
+                         help="a clip with a lower similarity is different from its sentence (default: 0.9)")
+    compare.add_argument("--no-check", action="store_true", help="do not verify the clips with the recognizer")
     test = commands.choices["selftest"]
     test.add_argument("--skip-tts", action="store_true", help="use the voice clips that are in the demo folder")
     test.add_argument("--skip-render", action="store_true", help="only the voice clips and the layout verification")

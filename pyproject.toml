@@ -33,7 +33,7 @@ videogen = "videogen.cli:main"
 include = ["videogen*"]
 
 [tool.setuptools.package-data]
-videogen = ["templates/*", "templates/scenes/*"]
+videogen = ["templates/*", "templates/scenes/*", "templates/voice-test/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

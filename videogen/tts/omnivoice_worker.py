@@ -138,6 +138,26 @@ def clean(wave: np.ndarray, rate: int, lead: float = LEAD, tail: float = TAIL, l
     return out
 
 
+def pauses(wave: np.ndarray, rate: int, shortest: float = 0.15) -> list[float]:
+    """The silences of at least `shortest` seconds between the words of an audio, in seconds. A
+    click in a silence does not split it, and the silence at the start and at the end does not
+    count. `videogen voice-compare` counts the pauses: a clone copies those of its sample."""
+    sound, hop = _voiced(wave, rate)
+    speech = _without_clicks(sound, max(1, round(0.05 * rate / hop)))   # a sound shorter than 50 milliseconds is not a word
+    loud = np.flatnonzero(speech)
+    if not len(loud):
+        return []
+    found, start = [], None
+    for index, flag in enumerate(list(speech[loud[0]:loud[-1] + 1]) + [False]):
+        if not flag and start is None:
+            start = index
+        elif flag and start is not None:
+            if (index - start) * hop / rate >= shortest:
+                found.append((index - start) * hop / rate)
+            start = None
+    return found
+
+
 def set_level(wave: np.ndarray, level: float = LEVEL, peak: float = PEAK) -> np.ndarray:
     """An audio with the RMS at `level`, when its highest sample stays under `peak`."""
     wave = np.asarray(wave, dtype=np.float32)
