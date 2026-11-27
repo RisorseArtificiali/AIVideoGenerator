@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -20,7 +21,8 @@ from videogen.langs import LANGS
 from videogen.narration import load_script
 from videogen.tts import ENGINES, SAMPLE_RATE
 from videogen.tts import omnivoice as engine_module
-from videogen.tts.omnivoice import OmniVoiceEngine, Sample, Worker, find_sample, folders_of, sample_names, speed_of, times_of
+from videogen.tts import omnivoice_worker as worker
+from videogen.tts.omnivoice import OmniVoiceEngine, Sample, Worker, find_sample, folders_of, sample_names, speed_of, speeds_of, times_of
 
 # A worker that speaks the protocol of the real one. Its mode says how it fails:
 # "die" stops at the first clip of its first run, "sleep" never answers, "garbage" answers out
@@ -103,6 +105,27 @@ def test_speed_of_the_rate():
     assert speed_of("-5%") == 0.95
     assert speed_of("+0%") == 1.0
     assert speed_of("fast") == 1.0
+
+
+def test_speeds_of_the_rate():
+    """Up to +20% the model speaks faster. Above, the model stays at +20% and the clip is made
+    shorter in time: made to speak faster, the model stops saying some words clearly."""
+    assert speeds_of("+10%") == (1.1, 1.0) and speeds_of("+20%") == (1.2, 1.0)
+    assert speeds_of("+32%") == (1.2, 1.1) and speeds_of("+100%") == (1.2, 1.6667)
+    assert speeds_of("-5%") == (0.95, 1.0) and speeds_of("fast") == (1.0, 1.0)
+
+
+def test_the_time_compression_keeps_the_pitch():
+    """`ffmpeg atempo` makes the clip shorter in time; the pitch of a tone does not change."""
+    if shutil.which("ffmpeg") is None:
+        pytest.skip("ffmpeg is not installed")
+    time = np.arange(24000 * 3) / 24000
+    tone = (0.3 * np.sin(2 * np.pi * 220 * time)).astype(np.float32)
+    squeezed = worker.squeeze(tone, 24000, 1.5)
+    assert 0.63 < len(squeezed) / len(tone) < 0.70                       # 1 / 1.5
+    spectrum = np.abs(np.fft.rfft(squeezed[4800:-4800].astype(np.float64)))
+    peak = np.fft.rfftfreq(len(squeezed) - 9600, 1 / 24000)[np.argmax(spectrum)]
+    assert abs(peak - 220) < 3
 
 
 def test_a_voice_is_a_sample_with_its_transcript(tmp_path):
@@ -201,6 +224,21 @@ def test_the_engine_reads_the_numbers_in_words_and_keeps_them_in_the_subtitles(t
     clip = engine.synthesize("Una frase.", "other/gia", "+0%")
     assert [word for _start, _duration, word in clip.words] == ["Una", "frase."]
     assert requests_of(fake_worker)[1]["ref"] == str((tmp_path / "other" / "gia.flac").resolve())
+
+
+def test_above_20_per_cent_the_worker_compresses_the_time(tmp_path, fake_worker):
+    """The worker receives the speed of the model (1.2 at the most) and the compression in time of
+    the clip. The clips made before, at a rate over +20%, have no compression in their fingerprint:
+    they are made again."""
+    voices = tmp_path / "voices"
+    make_voice(voices, "elsa")
+    engine = fake_engine(fake_worker, voices)
+    engine.configure(tmp_path, LANGS["it"])
+    engine.synthesize("Una frase.", "elsa", "+20%")
+    engine.synthesize("Una frase.", "elsa", "+32%")
+    first, second = requests_of(fake_worker)
+    assert first["speed"] == 1.2 and first["stretch"] == 1.0 and second["speed"] == 1.2 and second["stretch"] == 1.1
+    assert "|time" not in engine.signature("elsa", "+20%") and "|time" in engine.signature("elsa", "+32%")
 
 
 def test_an_unknown_voice_says_which_ones_exist(tmp_path, fake_worker):
@@ -495,9 +533,10 @@ def test_the_model_reads_a_clip():
     worker = Worker(OmniVoiceEngine.command())
     text = "Una frase di prova, con i numeri in parole: tre virgola sessantuno."
     answer = worker.request({"op": "synthesize", "text": text, "language": "it", "speed": 1.0, "seed": 1})
+    squeezed = worker.request({"op": "synthesize", "text": text, "language": "it", "speed": 1.0, "seed": 1, "stretch": 1.1})
     pid = worker.process.pid
     worker.close()
-    assert answer.get("ok"), answer
+    assert answer.get("ok") and squeezed.get("ok"), squeezed
     samples = np.frombuffer(base64.b64decode(answer["samples"]), dtype="<f4")
     seconds = len(samples) / SAMPLE_RATE
     assert answer["rate"] == SAMPLE_RATE and 2.0 < seconds < 15.0
@@ -506,5 +545,8 @@ def test_the_model_reads_a_clip():
     assert starts == sorted(starts) and 0.1 < starts[0] < 1.0 and answer["spans"][-1][1] < seconds
     assert np.sqrt(np.mean(samples.astype(np.float64) ** 2)) == pytest.approx(0.10, abs=0.02)   # the level of the clips of edge-tts
     assert np.abs(samples[: int(0.12 * SAMPLE_RATE)]).max() < 1e-6                      # the clip starts in silence
+    # The same generation, 10 per cent shorter in time: the last word comes sooner.
+    shorter = np.frombuffer(base64.b64decode(squeezed["samples"]), dtype="<f4")
+    assert 0.86 < len(shorter) / len(samples) < 0.95 and squeezed["spans"][-1][1] < answer["spans"][-1][1]
     with pytest.raises(ProcessLookupError):
         os.kill(pid, 0)                                                                       # the worker stops with videogen

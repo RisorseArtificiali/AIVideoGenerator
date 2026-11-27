@@ -11,10 +11,12 @@ standard error.
     gives {"ok": true, "device": "cuda:0"}
 
     {"op": "synthesize", "text": "...", "language": "it", "ref": "voice.wav", "ref_text": "...",
-     "speed": 1.0, "seed": 7}
+     "speed": 1.0, "stretch": 1.0, "seed": 7}
     gives {"ok": true, "rate": 48000, "samples": "<float32 in base64>", "spans": [[start, end], ...]}
 
 `spans` has the start and the end of each word of `text`, in seconds, in the audio of the answer.
+`speed` is the speed of the model. `stretch` makes the clip shorter in time after the generation:
+1.1 gives a clip 10 per cent shorter, with the same pitch.
 An error gives {"ok": false, "error": "..."}. With `--check`, the worker loads the model and the
 aligner, says whether they operate, and stops.
 
@@ -22,6 +24,8 @@ The model gives the audio only. The worker:
 
 - reads the time of each word with a forced alignment of the text on the audio (MMS_FA, the model
   of torchaudio);
+- makes the clip shorter in time when `stretch` is above 1: made to speak faster than 20 per cent,
+  the model stops saying some words clearly, so the engine keeps it there and compresses the time;
 - removes the long silences: the model copies the pauses of the sample of the voice, and a sample
   with a long pause gives clips with pauses of one or two seconds;
 - sets the level of the audio: the model copies the level of the sample too, and a quiet sample
@@ -34,6 +38,7 @@ import argparse
 import base64
 import json
 import os
+import subprocess
 import sys
 import time
 import traceback
@@ -44,6 +49,7 @@ from pathlib import Path
 import numpy as np
 
 CLIPS = 1                 # the form of the clips: change it when this file changes the audio that it gives
+TIME_STRETCH = 1          # the form of the compression in time: the same, when the way to compress changes
 RATE_OUT = 48000          # the sample rate of the clips of videogen
 LEAD = 0.15               # the seconds of silence before the first word
 TAIL = 0.15               # the seconds of silence after the last word
@@ -142,6 +148,24 @@ def set_level(wave: np.ndarray, level: float = LEVEL, peak: float = PEAK) -> np.
     return (wave * min(level / rms, peak / highest)).astype(np.float32)
 
 
+def squeeze(wave: np.ndarray, rate: int, factor: float) -> np.ndarray:
+    """The same audio, shorter in time: `factor` 1.1 gives a clip 10 per cent shorter, and the
+    pitch does not change. `ffmpeg atempo` does it: its algorithm keeps the words clear, where the
+    model made to speak faster does not."""
+    try:
+        done = subprocess.run(
+            ["ffmpeg", "-v", "error", "-f", "f32le", "-ac", "1", "-ar", str(rate), "-i", "pipe:0",
+             "-af", f"atempo={factor:.4f}", "-f", "f32le", "-ac", "1", "-ar", str(rate), "pipe:1"],
+            input=np.ascontiguousarray(wave, dtype="<f4").tobytes(), capture_output=True, check=True,
+        )
+    except FileNotFoundError as error:
+        raise RuntimeError("ffmpeg is not installed: it makes the clips shorter in time at a rate over 20 per cent.") from error
+    except subprocess.CalledProcessError as error:
+        reason = error.stderr.decode("utf-8", "replace").strip()[-300:]
+        raise RuntimeError(f"ffmpeg could not make the clip shorter in time: {reason}") from error
+    return np.frombuffer(done.stdout, dtype="<f4").copy()
+
+
 def letters(word: str) -> str:
     """The letters of a word for the aligner: the small Latin letters, without the accents,
     and the apostrophe. A word in another alphabet gives an empty string."""
@@ -205,16 +229,20 @@ class Speech:
         return self.prompts[key]
 
     def synthesize(self, text: str, language: str | None, ref: str | None, ref_text: str | None, speed: float | None,
-                   seed: int) -> tuple[np.ndarray, list[list[float]]]:
+                   seed: int, stretch: float = 1.0) -> tuple[np.ndarray, list[list[float]]]:
         """The audio at 48000 Hz, and the start and the end of each word of `text`.
-        Without `ref`, the model chooses a voice: each seed gives a different one."""
+        Without `ref`, the model chooses a voice: each seed gives a different one. `stretch` above
+        1 makes the clip shorter in time, before the silences are set."""
         self.torch.manual_seed(int(seed))
         options = {"speed": speed} if speed and abs(speed - 1.0) > 1e-6 else {}
         audio = self.model.generate(
             text=text, language=language, voice_clone_prompt=self.prompt(ref, ref_text or "") if ref else None, **options,
         )[0]
         rate = self.model.sampling_rate
-        audio = clean(np.asarray(audio, dtype=np.float32), rate)
+        audio = np.asarray(audio, dtype=np.float32)
+        if stretch and abs(stretch - 1.0) > 1e-3:
+            audio = squeeze(audio, rate, float(stretch))
+        audio = clean(audio, rate)
         if len(audio) < rate // 5 or not _voiced(audio, rate)[0].any():
             raise ValueError("The model gave no voice for this text.")
         audio = set_level(audio)
@@ -306,7 +334,8 @@ def main() -> int:
         started = time.time()
         try:
             wave, spans = speech.synthesize(
-                request["text"], request.get("language"), request.get("ref"), request.get("ref_text"), request.get("speed"), request.get("seed", 0),
+                request["text"], request.get("language"), request.get("ref"), request.get("ref_text"), request.get("speed"),
+                request.get("seed", 0), request.get("stretch", 1.0),
             )
         except Exception as error:
             traceback.print_exc()

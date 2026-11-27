@@ -85,7 +85,7 @@ To record a good sample:
 - **Pauses and level.** The model copies the pauses and the level of the sample. The engine sets each clip at the level of the clips of `edge-tts`, keeps 0.15 seconds of silence before the first word and after the last one, and makes a pause longer than 0.7 seconds 0.5 seconds long. A breath in a pause stays.
 - **The same clip again.** The model chooses at random. The engine gives it a seed that comes from the text, the voice and the rate. Thus a clip made again is the same clip.
 - **The time of the words.** The model gives the audio only. A second model, MMS_FA, finds the time of each word on the audio. The time of the words of the subtitles and of the cues comes 0.06 seconds before their sound.
-- **The speed.** `rate` in `video.toml` is the speed of the model: `+10%` reads 1.1 times faster. A voice can have its own speed (`voices/<name>.toml`), and a new video starts with it.
+- **The speed.** `rate` in `video.toml` is the speed of the voice: `+10%` reads 1.1 times faster. Up to `+20%` the model speaks faster. Above `+20%`, the model stays at `+20%` and the engine makes each clip shorter in time, with the same pitch: made to speak faster than that, the model stops saying some words clearly (a list of letters, a short phrase). A voice can have its own speed (`voices/<name>.toml`), and a new video starts with it.
 - **A process of its own.** The model needs PyTorch, and the tools of the template do not need it. Thus the model operates in the environment `venv-omnivoice`, in a process that `videogen tts` starts at the first clip and stops at the end. `videogen/tts/omnivoice_worker.py` is that process.
 
 ### Rules

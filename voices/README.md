@@ -32,6 +32,8 @@ voice = "elsa"
 
 **The speed.** When the voice has its `.toml` file, `videogen new` writes that speed as `rate` in the `video.toml` of the new video. To change the speed of one video, change `rate` in its `video.toml`. To change it for the next videos, change the `.toml` file of the voice. `videogen doctor` shows the speed of each voice.
 
+Up to `+20%` the model speaks faster. Above `+20%`, the engine keeps the model at `+20%` and makes the clips shorter in time, with the same pitch: made to speak faster than that, the model stops saying some words clearly.
+
 ## Rules of this folder
 
 - **A sample of a voice is personal data.** Git ignores this folder, except this README. Do not put a sample in git, and do not give a sample to others without the consent of the person whose voice it is.
