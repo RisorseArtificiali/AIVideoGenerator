@@ -9,7 +9,7 @@
     {
       "name": "aivideogenerator",
       "source": "./",
-      "description": "The article-to-video skill: a video in the 3Blue1Brown style from an article, a paper, or notes, in the language that you select.",
+      "description": "Two skills: article-to-video makes a video in the 3Blue1Brown style from an article, a paper, or notes, in the language that you select; omnivoice-voice installs the local speech engine omnivoice and prepares a voice cloned from your recordings.",
       "category": "productivity",
       "homepage": "https://github.com/RisorseArtificiali/AIVideoGenerator"
     }

@@ -83,6 +83,7 @@ When a scene starts, `videogen/style.py` composes the background with the logo a
 | `videogen/subtitles.py` | the line breaks of the subtitles, the `.srt` file, the subtitles drawn into the film |
 | `videogen/style.py` | the look of a video project: the background with the logo, and the corner of the logo |
 | `videogen/speech.py` | the voice clips, the fingerprints, the recordings of the user |
+| `videogen/voices.py` | the voices of `omnivoice`: a voice made from recordings (`voice-prepare`), the file to listen with the measures and the verification of the clips (`voice-compare`) |
 | `videogen/tts/__init__.py` | the interface of the speech engines (`Engine`, `Clip`), the engine `edge-tts`, the `.env` files |
 | `videogen/tts/omnivoice.py` | the engine `omnivoice`: the samples of the voices, the dialogue with its worker |
 | `videogen/tts/omnivoice_worker.py` | the process that operates the model in its own environment: the audio, the silences, the time of the words |
@@ -91,7 +92,7 @@ When a scene starts, `videogen/style.py` composes the background with the logo a
 | `videogen/narration.py` | the load and the verification of `narration.py` |
 | `videogen/config.py` | `video.toml` |
 | `videogen/paths.py` | the folders |
-| `videogen/templates/` | the files of a new video project |
+| `videogen/templates/` | the files of a new video project, and the test sentences of the voices (`voice-test/`) |
 
 ## The palette of the charts
 

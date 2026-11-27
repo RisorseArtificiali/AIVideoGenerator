@@ -43,6 +43,8 @@ tools/setup-omnivoice.sh
 
 The install downloads approximately 11 GB in the folder `.tools`: the environment `venv-omnivoice` (with PyTorch), `models/omnivoice` and `models/mms-fa`. The model needs a GPU for a fast voice. The details are in [Speech engines](5-tts-engines.md).
 
+With an agent, the skill `omnivoice-voice` starts the installer, verifies the engine, and then prepares a voice with you from your recordings.
+
 ## The tools folder
 
 ```

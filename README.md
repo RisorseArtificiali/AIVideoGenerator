@@ -2,10 +2,11 @@
 
 AIVideoGenerator makes narrated explainer videos in the style of 3Blue1Brown: animation with Manim, text with LaTeX, and a voice-over that agrees with the animation. The source is an article, a paper, a document, or notes. The video is in the language that you select. This language is independent of the language of the source.
 
-The repository has two parts:
+The repository has three parts:
 
 - **The template**: the engine `videogen`. It has the command line, the scene blocks, and the speech engines: the online service `edge-tts`, and the optional local model `omnivoice` that reads the text with a sample of a voice.
 - **The skill** `article-to-video`: the procedure for the agent. It shows one menu at the start: the mode (automatic, or personalized to build the plan with you), the language with the voice, the speech engine, the coverage. Then it verifies the tools, writes the narration, makes and verifies the scenes with one subagent for each chapter (when the agent can start them), and renders the film.
+- **The skill** `omnivoice-voice`: the procedure to install the engine `omnivoice` and to make a voice from your recordings. It works with you: you record one or two sentences, then you choose the sample and the speed by ear.
 
 ## What you get
 
@@ -59,7 +60,7 @@ You do not need root access. The script puts the tools in the `.tools` folder of
 2. Install the skill in Claude Code. Use one of these procedures:
 
    - Plugin: `/plugin marketplace add RisorseArtificiali/AIVideoGenerator`, then `/plugin install aivideogenerator@aivideogenerator`.
-   - Copy: `cp -r skills/article-to-video ~/.claude/skills/`.
+   - Copy: `cp -r skills/article-to-video skills/omnivoice-voice ~/.claude/skills/`.
 
 3. Start Claude Code and write, for example:
 
@@ -67,14 +68,15 @@ You do not need root access. The script puts the tools in the `.tools` folder of
 
    The skill shows one menu at the start, then it makes the video. In the automatic mode it decides alone and lists its decisions in the final report. In the personalized mode it asks for the focus of the video and agrees on the plan with you: your angle, your content, other sources.
 
-4. Optional: read the text with a sample of your voice, on your computer. Put a sample of 2 to 20 seconds in `voices/<name>.wav`, with the words that it says in `voices/<name>.txt`, then:
+4. Optional: read the text with a sample of your voice, on your computer. Ask the skill `omnivoice-voice`: it installs the engine (about 11 GB) and makes the voice with you, from your recordings. Without an agent:
 
    ```bash
    tools/setup-omnivoice.sh
-   videogen new videos/my-video --language en --engine omnivoice --voice <name> --title "Title of the video"
+   videogen voice-prepare my-voice my-recording.wav --text "<the words of your recording>"
+   videogen new videos/my-video --language en --engine omnivoice --voice my-voice --title "Title of the video"
    ```
 
-   The install downloads approximately 11 GB. The engine `omnivoice` is optional: the videos with `edge-tts` do not need it. The details are in [Speech engines](docs/5-tts-engines.md).
+   The engine `omnivoice` is optional: the videos with `edge-tts` do not need it. The details are in [Speech engines](docs/5-tts-engines.md).
 
 ## How it works
 
