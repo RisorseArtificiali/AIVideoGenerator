@@ -5,7 +5,7 @@ AIVideoGenerator makes narrated explainer videos in the style of 3Blue1Brown: an
 The repository has two parts:
 
 - **The template**: the engine `videogen`. It has the command line, the scene blocks, and the speech engines: the online service `edge-tts`, and the optional local model `omnivoice` that reads the text with a sample of a voice.
-- **The skill** `article-to-video`: the procedure for the agent. It shows one menu at the start: the mode (automatic, or personalized to build the plan with you), the language with the voice, the speech engine, the coverage. Then it verifies the tools, writes the narration, makes the scenes, verifies them, and renders the film.
+- **The skill** `article-to-video`: the procedure for the agent. It shows one menu at the start: the mode (automatic, or personalized to build the plan with you), the language with the voice, the speech engine, the coverage. Then it verifies the tools, writes the narration, makes and verifies the scenes with one subagent for each chapter (when the agent can start them), and renders the film.
 
 ## What you get
 
@@ -117,6 +117,7 @@ The documentation uses the rules of ASD-STE100, Simplified Technical English.
 - `edge-tts` is not an official API of Microsoft. It is free and needs no key, but the service can change or stop. The text of the narration goes to the servers of Microsoft.
 - The model of `omnivoice` has the license CC-BY-NC: it permits a use that is not commercial. A sample of a voice is personal data: the folder `voices` stays out of git.
 - The agent cannot hear the audio. It verifies the pronunciation with an offline speech recognizer. Listen to the voice and the rhythm yourself.
+- When the agent uses subagents, the agent that talks with you does not see the contact sheets: the subagents verify them and report. The sheets are in `build/sheets/` of the video, for you to see.
 - The automatic verification of the layout finds text out of the frame and text on text. It does not find a line on text or a bad position: look at the contact sheets of the scenes and of the film (`videogen sheet --film`).
 - The subtitles in the film are part of the image: the viewer cannot turn them off.
 

@@ -50,8 +50,10 @@ def tool_env(root: Path, quality: str) -> dict:
     return env
 
 
-def scene_files(root: Path, script) -> dict[str, Path]:
-    """One scene file for each scene of the script: scenes/<scene>_*.py."""
+def scene_files(root: Path, script, scenes: list[str] | None = None) -> dict[str, Path]:
+    """The files of the scenes, scenes/<scene>_*.py. Without `scenes`, the file of each scene of
+    the script must be there. With `scenes`, only theirs: a command on some scenes operates
+    while the other scenes are not written yet (the skill writes them at the same time)."""
     found = {}
     for path in sorted((root / "scenes").glob("ch*.py")):
         match = SCENE_FILE.match(path.name)
@@ -59,7 +61,8 @@ def scene_files(root: Path, script) -> dict[str, Path]:
             if match.group(1) in found:
                 raise RuntimeError(f"Two scene files for {match.group(1)}: {found[match.group(1)].name} and {path.name}. Keep one.")
             found[match.group(1)] = path
-    missing = [scene for scene in script.order if scene not in found]
+    wanted = script.order if scenes is None else scenes
+    missing = [scene for scene in wanted if scene not in found]
     if missing:
         raise RuntimeError(f"No scene file for: {', '.join(missing)}. The file name is scenes/<scene>_<name>.py, for example scenes/ch02_idea.py.")
     return found
@@ -75,7 +78,7 @@ def scene_class(path: Path) -> str:
 def run_scenes(root: Path, script, scenes, quality: str, jobs: int, dry_run: bool = False, log=print) -> dict:
     """Render scenes with Manim, in parallel. With `dry_run` there is no video: the scenes
     only run, and report layout, cue and pace problems."""
-    files = scene_files(root, script)
+    files = scene_files(root, script, scenes)
     env = tool_env(root, "dry" if dry_run else quality)
     tag = "dry" if dry_run else quality
     results = {}

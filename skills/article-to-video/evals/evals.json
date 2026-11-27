@@ -40,7 +40,37 @@
     {
       "id": 7,
       "prompt": "make a 3Blue1Brown style video from this article: https://example.com/blog/small-models",
-      "expected_output": "The project has the look of the template as `videogen new` writes it in `video.toml` (the sections `[style]` and `[subtitles]`): the skill asks nothing about the look and keeps the two sections. The scenes keep the band at the bottom and the corner of the logo free; when `videogen check` reports text in the band or under the logo, the skill corrects the scene. After `videogen assemble`, the skill opens the sheets of the film (`videogen sheet --film --quality h`): each frame has the background, the logo at the top right and its subtitle in the band, with no content under the subtitles. The report says that the look of the film was verified.",
+      "expected_output": "The project has the look of the template as `videogen new` writes it in `video.toml` (the sections `[style]` and `[subtitles]`): the skill asks nothing about the look and keeps the two sections. The scenes keep the band at the bottom and the corner of the logo free; when `videogen check` reports text in the band or under the logo, the skill corrects the scene. After `videogen assemble`, the skill verifies the sheets of the film (`videogen sheet --film --quality h`): each frame has the background, the logo at the top right and its subtitle in the band, with no content under the subtitles. The report says that the look of the film was verified.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "fammi un video da questo articolo: https://example.com/blog/quantum-error-correction",
+      "expected_output": "The agent can start subagents, so the figures go to a reader that writes `build/source/figures.md`, and the main agent plans the video from the text and from that file. After the voice, the skill starts one builder for each chapter, all at the same time. Each builder writes the scene of its chapter with the blocks, and corrects it with `videogen check`, the preview at 480p and the contact sheets of its chapter, until it is clean. It returns a report of about fifteen lines, with one item for each beat. The conversation with the user does not open the code of the scenes and the sheets of the preview: it knows each chapter through its report. When every builder has returned, the skill runs `videogen check` on all the scenes. After the assembly, one reviewer for each chapter verifies the sheets of the film.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "make a video from this article, I need it for tomorrow: https://example.com/post/vector-db",
+      "expected_output": "When the agent cannot start subagents, the skill makes the scenes in the conversation: it reads `references/scenes.md` and `references/blocks.md`, writes one scene for each chapter, and opens every figure and every contact sheet itself, with the loop of Step 5 and of Step 6. The result is the same: `videogen check` is clean and every sheet is verified. The skill does not stop to ask whether to use subagents.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "turn this into a video: https://example.com/blog/small-language-models",
+      "expected_output": "The final report says that subagents verified the contact sheets, and where the sheets are (`build/sheets/` of the project). It has the notes of the builders, for example the values read from a figure and the visuals that come from a figure. It still says that the agent cannot listen to the audio, that the user must hear the voice and the rhythm, and it lists the decisions taken after the menu.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "fammi un video di 4 minuti da questo post: https://example.org/posts/retrieval-augmented-generation",
+      "expected_output": "A chapter whose builder ended without a report, or that is open after its second builder, is made by the skill itself: it reads the scene, runs the commands on that scene, and opens the sheets of that chapter. The other chapters stay in their subagents. A builder that finds a name the voice reads badly does not change `spoken_rules.py`: the skill writes the rule, starts `videogen tts` and `videogen transcript` again, and the chapter is made again.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "make a 3Blue1Brown style video from this paper: https://example.com/papers/mixture-of-experts",
+      "expected_output": "In `narration.py`, the `visual` note of a beat says the color of a thing that comes back in several chapters (a series, a model, a category), the first time and each time after. The scenes of the different chapters, made by different builders, use that color for that thing.",
       "files": []
     }
   ]

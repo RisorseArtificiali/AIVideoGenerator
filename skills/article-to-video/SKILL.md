@@ -1,6 +1,6 @@
 ---
 name: article-to-video
-description: Make a narrated explainer video in the 3Blue1Brown style (Manim animation, LaTeX, voice-over) from an article, a paper, a blog post, a document, or notes. Use this skill whenever the user asks for a video, an animated explainer, a "3Blue1Brown style" video, a Manim video, a video from a URL or a text, or a video in a language that they select. Use it even when the user does not say "3Blue1Brown", and when the user wants to build the video with you: their focus, their content, other sources. The skill shows one menu at the start (automatic or personalized mode, language and voice, speech engine, coverage), then it makes the video to the end.
+description: 'Make a narrated explainer video in the 3Blue1Brown style (Manim animation, LaTeX, voice-over) from an article, a paper, a blog post, a document, or notes. Use this skill whenever the user asks for a video, an animated explainer, a "3Blue1Brown style" video, a Manim video, a video from a URL or a text, or a video in a language that they select. Use it even when the user does not say "3Blue1Brown", and when the user wants to build the video with you: their focus, their content, other sources. The skill shows one menu at the start (automatic or personalized mode, language and voice, speech engine, coverage), then it makes the video to the end.'
 ---
 
 # Article to video
@@ -19,6 +19,14 @@ Read this before Step 0. It explains the reasons of the rules below.
 - The template is the engine. It gives the command line `videogen`, drawing helpers, and **blocks**: charts, diagrams and text screens that are ready to use. Make the scenes from the blocks. Write geometry by hand only for what no block gives.
 - The expensive part is the scene code and its correction. Two things cut that cost: a plan fixed before the code, and the blocks. In the automatic mode the plan is yours. In the personalized mode you build it with the user.
 - The language of the video is a decision of the user. It is independent of the language of the source. The narration, the text on the screen, the subtitles and the voice use the language of the video. You translate and explain from the source.
+
+## Subagents
+
+When your tools can start subagents, use them in the Steps 2, 5 and 6. A video costs a lot of context: the figures, the code of the scenes and the contact sheets are the greater part of it. In subagents, this conversation stays small until the report, and the chapters are made in parallel.
+
+- A subagent knows only its brief, works on one thing (the figures, a chapter) and returns a short report. It does not ask the user.
+- `references/subagents.md` says how to start the subagents and what to do with their reports.
+- When your tools cannot start subagents, each step says how to do the same in this conversation.
 
 ## Step 0 — The tools
 
@@ -69,11 +77,14 @@ With "My own recordings", use `--engine edge-tts` in the command and follow the 
 
 ## Step 2 — Read the source
 
-Read the complete source. For a web page, start `videogen extract <url> --root <folder>`: it makes `build/source/article.md` with the text, and `build/source/figures/` with the figures. Read the text and look at each figure: the figures show the diagrams that the video must redraw.
+Read the complete source. For a web page, start `videogen extract <url> --root <folder>`: it makes `build/source/article.md` with the text, and `build/source/figures/` with the figures. For a local file, start `videogen extract <path> --root <folder>`. For pasted text, save it in `build/source/article.md`.
 
-For a local file, start `videogen extract <path> --root <folder>`. For pasted text, save it in `build/source/article.md`.
+The figures show the diagrams that the video must redraw:
 
-If `extract` cannot read the page (a login, a block), read the page with your tools and save the text in `build/source/article.md`. If you can read only a part of the source (a preview, a page that needs a login), stop and say what you could not read: the user can paste it. A video made on a part of the source would miss the argument, and nobody would know it.
+- **With subagents:** when the folder of the figures has files, start the figure reader (`references/subagents.md`). Read the text while the reader works. When it has returned, read `build/source/figures.md`: it says what each figure shows and which block can redraw it. Open a figure only when you have a doubt.
+- **Without subagents:** read the text and look at each figure.
+
+If `extract` cannot read the page (a login, a block), read the page with your tools and save the text in `build/source/article.md`. When the source has formulas that `extract` loses (for example a page with MathML: a sentence ends with a colon, and nothing follows), read the source with your tools and save the formulas in `build/source/formulas.md`. If you can read only a part of the source (a preview, a page that needs a login), stop and say what you could not read: the user can paste it. A video made on a part of the source would miss the argument, and nobody would know it.
 
 Condition: you know the main claim, the parts of the argument, the numbers and their sources, and what each figure shows.
 
@@ -93,7 +104,7 @@ videogen tts --root <folder>
 videogen transcript --root <folder>
 ```
 
-`tts` makes one clip for each beat. `transcript` transcribes the clips with an offline speech recognizer and compares the result with the script: it finds the names that the voice reads badly. You cannot hear the clips: this is your test of the pronunciation. When a clip is different from the script, write a rule in `spoken_rules.py` and start the two commands again.
+`tts` makes one clip for each beat. `transcript` transcribes the clips with an offline speech recognizer and compares the result with the script: it finds the names that the voice reads badly. You cannot hear the clips: this is your test of the pronunciation. When a clip is different from the script, read what the voice says (`--show`). A name that the small recognizer hears badly can be right: verify it with `--model medium`. When the voice does not read a list of letters, or a formula, in a clear way, write the sentence in another way. Write a rule in `spoken_rules.py` for a name that the voice reads badly. Then start the two commands again.
 
 With the engine `omnivoice`, keep the numbers of the narration as they are written: the engine reads them in words, and the subtitles show the digits.
 
@@ -101,7 +112,11 @@ Condition: `transcript` prints "The voice says the script."
 
 ## Step 5 — The scenes
 
-Read `references/scenes.md` and `references/blocks.md`. Write one scene file for each chapter in `scenes/`. Use the blocks before you write geometry.
+**With subagents**, each chapter goes to a builder. The builder writes the scene of its chapter and corrects it, on its chapter, with the loop below, until the chapter is clean. Start one builder for each chapter, all at the same time. Then follow `references/subagents.md` ("At Step 5") for the chapters that are open. The code of the scenes and their sheets stay out of this conversation: you know each chapter through the report of its builder.
+
+Condition: `videogen check --root <folder>` is clean on all the scenes, and every chapter has a report that says CLEAN, or is clean in your hands (`references/subagents.md` says when you take a chapter).
+
+**Without subagents**, read `references/scenes.md` and `references/blocks.md`. Write one scene file for each chapter in `scenes/`. Use the blocks before you write geometry.
 
 Then correct the scenes with this loop, until the scene is **clean**:
 
@@ -125,15 +140,19 @@ videogen sheet --film --quality h --root <folder>    # the film, frame by frame,
 
 The commands make the files in `out/`: the film `.mp4` with the subtitles drawn into it, `chapters.txt` and `voice.wav` (the voice only).
 
-The sheets of the film are in `build/sheets/h-film/`: one frame at the end of each beat, taken from the film. Open and look at every sheet. It is the only place where you see the subtitles and what is under them. In each frame verify:
+The sheets of the film are in `build/sheets/h-film/`: one frame at the end of each beat, taken from the film. It is the only place where you see the subtitles and what is under them.
+
+With subagents: open the first sheet once, to see the look with your own eyes. Then start one reviewer for each chapter, all at the same time, and follow `references/subagents.md` ("At Step 6"): the reviewers verify every frame.
+
+Without subagents: open and look at every sheet. When a frame is wrong, correct the scene. Then render only that scene (`videogen render --root <folder> <scene>`), and start `assemble` and this verification again.
+
+In each frame, the three points to verify are:
 
 - the background and the logo at the top right are there;
 - the subtitle is in the band at the bottom, in the font and the color of the look;
 - no content is in the band or under the logo.
 
-When a frame is wrong, correct the scene. Then render only that scene (`videogen render --root <folder> <scene>`), and start `assemble` and this verification again.
-
-Condition: `sync` prints "OK", the film exists, and every sheet of the film shows the look of the template.
+Condition: `sync` prints "OK", the film exists, and every sheet of the film shows the look of the template: you saw it, or the reviewer of that chapter said CLEAN.
 
 ## Step 7 — The report
 
@@ -141,7 +160,7 @@ The report ends the work. Tell the user:
 
 1. The path of the film, of `script.md` and of `storyboard.md`.
 2. The chapters with their time (from `out/chapters.txt`).
-3. What you verified: layout, pronunciation (with the recognizer), agreement of voice and video, the look of the film (background, logo, subtitles) on the sheets of the film. Say that you cannot listen to the audio: the user must hear the voice and the rhythm. With "My own recordings", say that the recognizer did not verify the clips of the user.
+3. What you verified: layout, pronunciation (with the recognizer), agreement of voice and video, the look of the film (background, logo, subtitles) on the sheets of the film. With subagents, say that they verified the contact sheets, and where the sheets are (`build/sheets/` of the project). Say that you cannot listen to the audio: the user must hear the voice and the rhythm. With "My own recordings", say that the recognizer did not verify the clips of the user.
 4. The decisions that you took after the menu, each with the place where the user can change it: for example a beat that comes from a figure, a name that the voice says in another form, a sentence that you changed for the subtitles, a contradiction in the source.
 5. What is approximate: numbers read from figures, illustrative curves. These need a note on the screen.
 6. What is not confirmed in the source: the video shows it as not confirmed.
