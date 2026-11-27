@@ -1,0 +1,37 @@
+# Voices for OmniVoice
+
+This folder has the voices of the speech engine `omnivoice`: a local model that reads the text with a voice cloned from a sample. The installer of the engine is `tools/setup-omnivoice.sh`. The details are in [`docs/5-tts-engines.md`](docs/5-tts-engines.md).
+
+A voice is two files with the same name:
+
+| File | Content |
+|---|---|
+| `voices/<name>.wav` | a sample of the voice, from 2 to 20 seconds. WAV, FLAC, OGG or MP3 |
+| `voices/<name>.txt` | the words of the sample, exactly as the voice says them |
+
+```text
+voices/elsa.wav
+voices/elsa.txt
+```
+
+To record a good sample:
+
+1. Read one or two sentences, in the language of the video, with the pauses and the speed that you want to hear in the video. The model copies them: a long pause in the sample gives long pauses in every clip.
+2. Read words with open vowels and words with closed vowels. The model copies the vowels of the sample: a sample with closed vowels only gives a voice with vowels that are too closed. In Italian, *è*, *fretta*, *effetto*, *oggi*, *cuore* are open, and *sempre*, *perché*, *non*, *dopo* are closed. For example: "È spesso un effetto di fretta: oggi non c'è un metodo perfetto, e quello che resta è breve."
+3. Use a quiet room and a good microphone. The engine changes the level of the audio, not its quality.
+4. Write the transcript with the normal punctuation. The engine adds the final period, if it is not there.
+
+Then use the name of the voice in `video.toml`:
+
+```toml
+engine = "omnivoice"
+voice = "elsa"
+```
+
+## Rules of this folder
+
+- **A sample of a voice is personal data.** Git ignores this folder, except this README. Do not put a sample in git, and do not give a sample to others without the consent of the person whose voice it is.
+- **The samples are only on your computer.** A clone of the repository has no voice: keep a copy of your samples with your backups, to use them again on another computer.
+- `videogen new` does not copy this folder. A video project can have its own folder `voices/`: it comes before this one.
+- The sample must be in the language of the video.
+- When you change a sample, `videogen tts` makes the clips of that voice again.

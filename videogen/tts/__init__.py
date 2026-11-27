@@ -1,6 +1,6 @@
 """Speech synthesis engines. An engine changes one line of text to audio, and gives the
 time of each word. To add an engine (a service with an API key, or a local model on the
-GPU), write a subclass of Engine and put it in ENGINES. See docs/6-tts-engines.md."""
+GPU), write a subclass of Engine and put it in ENGINES. See docs/5-tts-engines.md."""
 
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
+
+from videogen.langs import Language
 
 SAMPLE_RATE = 48000
 
@@ -44,6 +46,12 @@ class Engine:
     id = ""
     name = ""
     needs_env: tuple[str, ...] = ()     # variables that the engine reads from .env
+    optional = False                    # an engine that tools/setup.sh does not install: `videogen doctor` does not count it
+    voices_help = ""                    # how to give the engine a voice, when its voices are not a list
+
+    def configure(self, root: Path, language: Language) -> None:
+        """The folder of the video project and its language, before the first call of `synthesize`.
+        An engine that needs them keeps them in an attribute: `videogen tts` calls this one time."""
 
     def status(self) -> Status:
         missing = [name for name in self.needs_env if not os.environ.get(name)]
@@ -51,9 +59,16 @@ class Engine:
             return Status(False, "no " + ", ".join(missing) + " in .env")
         return Status(True)
 
-    def voices(self, language) -> list[str]:
-        """The voices of the engine for one videogen.langs.Language."""
+    def voices(self, language, root: Path | None = None) -> list[str]:
+        """The voices of the engine for one videogen.langs.Language. `root` is the folder of the
+        video project, when the command knows it: an engine can keep its voices in that folder."""
         return list(language.voices.get(self.id, ()))
+
+    def signature(self, voice: str, rate: str) -> str:
+        """What the fingerprint of a clip adds when the voice depends on files that can change,
+        as a sample of a voice. Then `videogen tts` makes the clips again when the file changes.
+        An empty string for most engines."""
+        return ""
 
     def synthesize(self, text: str, voice: str, rate: str) -> Clip:
         raise NotImplementedError
@@ -147,3 +162,9 @@ def load_env(*paths: Path) -> list[str]:
                 os.environ[name] = value
                 loaded.append(name)
     return loaded
+
+
+# The local engine comes after the base class, because its module imports the names defined above.
+from videogen.tts.omnivoice import OmniVoiceEngine  # noqa: E402
+
+ENGINES["omnivoice"] = OmniVoiceEngine()

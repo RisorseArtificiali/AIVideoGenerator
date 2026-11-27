@@ -4,7 +4,7 @@ AIVideoGenerator makes narrated explainer videos in the style of 3Blue1Brown: an
 
 The repository has two parts:
 
-- **The template**: the engine `videogen`. It has the command line, the scene blocks, and the speech engines.
+- **The template**: the engine `videogen`. It has the command line, the scene blocks, and the speech engines: the online service `edge-tts`, and the optional local model `omnivoice` that reads the text with a sample of a voice.
 - **The skill** `article-to-video`: the procedure for the agent. It shows one menu at the start: the mode (automatic, or personalized to build the plan with you), the language with the voice, the speech engine, the coverage. Then it verifies the tools, writes the narration, makes the scenes, verifies them, and renders the film.
 
 ## What you get
@@ -40,6 +40,7 @@ The images and the font are in the folder `media`. `videogen new` writes the loo
 - `ffmpeg`, `curl`, `perl`, `tar`. ImageMagick (`magick`) for the contact sheets.
 - A network connection for the install and for the voice (`edge-tts`).
 - Approximately 1.5 GB of disk space for the tools.
+- Optional, for the local speech engine `omnivoice` (a sample of your voice): a GPU for a fast voice, approximately 11 GB more of disk space, and no network connection for the voice.
 
 You do not need root access. The script puts the tools in the `.tools` folder of the repository. Thus the tools stay with the project.
 
@@ -65,6 +66,15 @@ You do not need root access. The script puts the tools in the `.tools` folder of
    > Make a video in the 3Blue1Brown style from this article: https://...
 
    The skill shows one menu at the start, then it makes the video. In the automatic mode it decides alone and lists its decisions in the final report. In the personalized mode it asks for the focus of the video and agrees on the plan with you: your angle, your content, other sources.
+
+4. Optional: read the text with a sample of your voice, on your computer. Put a sample of 2 to 20 seconds in `voices/<name>.wav`, with the words that it says in `voices/<name>.txt`, then:
+
+   ```bash
+   tools/setup-omnivoice.sh
+   videogen new videos/my-video --language en --engine omnivoice --voice <name> --title "Title of the video"
+   ```
+
+   The install downloads approximately 11 GB. The engine `omnivoice` is optional: the videos with `edge-tts` do not need it. The details are in [Speech engines](docs/5-tts-engines.md).
 
 ## How it works
 
@@ -95,7 +105,7 @@ videogen selftest
 - [The workflow, step by step](docs/2-workflow.md)
 - [The video project: narration, scenes, configuration](docs/3-video-project.md)
 - [Scenes and blocks](docs/4-scenes.md)
-- [Speech engines: keys, local models, your voice](docs/5-tts-engines.md)
+- [Speech engines: the online service, the local model with your voice, your recordings](docs/5-tts-engines.md)
 - [Languages](docs/6-languages.md)
 - [How the engine works](docs/7-architecture.md)
 - [Troubleshooting](docs/8-troubleshooting.md)
@@ -105,6 +115,7 @@ The documentation uses the rules of ASD-STE100, Simplified Technical English.
 ## Limits
 
 - `edge-tts` is not an official API of Microsoft. It is free and needs no key, but the service can change or stop. The text of the narration goes to the servers of Microsoft.
+- The model of `omnivoice` has the license CC-BY-NC: it permits a use that is not commercial. A sample of a voice is personal data: the folder `voices` stays out of git.
 - The agent cannot hear the audio. It verifies the pronunciation with an offline speech recognizer. Listen to the voice and the rhythm yourself.
 - The automatic verification of the layout finds text out of the frame and text on text. It does not find a line on text or a bad position: look at the contact sheets of the scenes and of the film (`videogen sheet --film`).
 - The subtitles in the film are part of the image: the viewer cannot turn them off.

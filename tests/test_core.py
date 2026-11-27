@@ -58,6 +58,37 @@ def test_subtitles_do_not_end_with_a_function_word():
     assert all(not text.endswith(" of") for _s, _e, text in cues)
 
 
+def test_subtitles_show_the_script_not_the_text_that_the_voice_reads():
+    """A rule of spoken_rules.py can change one token in several words, and the service gives its
+    words without the punctuation. The subtitles show the script as it is written."""
+    from videogen import cli
+
+    def entry(text, spoken, words):
+        return {"text": text, "spoken": spoken, "words": [(0.5 * index, 0.4, word) for index, word in enumerate(words)]}
+
+    # A rule changes "GPT-5.6" in four words and "OpenAI" in two: each token of the script goes from its first word to its last one.
+    shown = cli.subtitle_words(entry("OpenAI ha rilasciato GPT-5.6 a novembre.", "Open AI ha rilasciato GPT 5 punto 6 a novembre.",
+                                     "Open AI ha rilasciato GPT 5 punto 6 a novembre.".split()))
+    assert [text for _start, _duration, text in shown] == "OpenAI ha rilasciato GPT-5.6 a novembre.".split()
+    assert shown[0] == (0.0, 0.9, "OpenAI")
+    assert shown[2] == (pytest.approx(1.5), pytest.approx(0.4), "rilasciato")
+    assert shown[3] == (pytest.approx(2.0), pytest.approx(1.9), "GPT-5.6") and shown[5] == (pytest.approx(4.5), pytest.approx(0.4), "novembre.")
+    # No rule, and one word of the voice for each token: the tokens of the script, with their punctuation.
+    same = entry("Nel 2026, cresce del 3,61%.", "Nel 2026, cresce del 3,61%.", "Nel 2026, cresce del 3,61%.".split())
+    assert [text for _start, _duration, text in cli.subtitle_words(same)] == "Nel 2026, cresce del 3,61%.".split()
+    # A rule takes a token out: the other tokens keep their time.
+    assert cli.subtitle_words(entry("A b C.", "A C.", "A C".split())) == [(0.0, 0.4, "A"), (0.5, 0.4, "C.")]
+    # The service gives other words, and not one for each token: its words go to the subtitles.
+    other = entry("A b C.", "A b C.", "A bC".split())
+    assert [text for _start, _duration, text in cli.subtitle_words(other)] == ["A", "bC"]
+    # Two tokens changed, one next to the other: the correspondence is not sure.
+    doubt = entry("OpenAI GPT-5.6.", "Open AI GPT 5 punto 6.", "Open AI GPT 5 punto 6".split())
+    assert [text for _start, _duration, text in cli.subtitle_words(doubt)] == "Open AI GPT 5 punto 6".split()
+    # A recording of the user has no timed word.
+    assert cli.subtitle_words({"text": "Una frase.", "words": []}) == []
+    assert " ".join(text for _start, _end, text in subtitles.group_cues(shown)) == "OpenAI ha rilasciato GPT-5.6 a novembre."
+
+
 def test_layout_verification():
     first = theme.T("first line").move_to([0, 0, 0])
     second = theme.T("second line").move_to([0, 0, 0])

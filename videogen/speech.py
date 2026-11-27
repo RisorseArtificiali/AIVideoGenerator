@@ -79,7 +79,9 @@ def _rules(script: Script, config: VideoConfig):
 
 def synthesize(script: Script, config: VideoConfig, engine: Engine, scenes=None, force: bool = False, workers: int = 4, log=print) -> None:
     """Make the clips that are missing, or older than their text."""
+    engine.configure(config.root, config.lang)
     voice, rate = config.resolved_voice, config.rate
+    signature = engine.signature(voice, rate)     # not empty when the voice depends on a file that can change
     stale, timings = [], {}
     for scene in scenes or script.order:
         path = timing_path(config.root, scene)
@@ -88,7 +90,7 @@ def synthesize(script: Script, config: VideoConfig, engine: Engine, scenes=None,
         timings[scene] = timing
         for beat in script.beats[scene]:
             text = spoken(beat.text, _rules(script, config))
-            digest = hashlib.sha1(f"{engine.id}|{voice}|{rate}|{text}".encode("utf-8")).hexdigest()[:16]
+            digest = hashlib.sha1(f"{engine.id}|{voice}|{rate}|{text}{signature}".encode("utf-8")).hexdigest()[:16]
             entry = timing["beats"].get(beat.key)
             clip = clip_path(config.root, scene, beat.key)
             if entry and entry.get("hash") == "manual" and clip.is_file():
