@@ -9,7 +9,10 @@ worker reads the model and the sample of the voice on the disk, and does not use
 A voice is a sample of a voice with its transcript: `voices/<name>.wav` and `voices/<name>.txt`,
 in the folder of the video project or in the folder of the template. The model copies the voice,
 and also its pauses and its level: use one or two sentences (2 to 20 seconds), in the language of
-the video.
+the video. A third file, `voices/<name>.toml`, is optional: it gives the speed of the voice
+(`rate = "+32%"`), and `videogen new` writes it in `video.toml`. Up to +20% the model speaks
+faster. Above, the model stays at +20%, and the clips are made shorter in time: made to speak
+faster, the model stops saying some words clearly.
 
 `tools/setup-omnivoice.sh` installs the engine. The license of the model is CC-BY-NC.
 """
@@ -29,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,6 +53,7 @@ TIMEOUT = 900.0        # the seconds given to the worker for one clip: without a
 START = 240.0         # the seconds given to the worker to start: it loads the model from the disk
 GRACE = 10.0          # the seconds given to the worker to stop, before it is killed
 LEAD = 0.06           # the words of the subtitles and of the cues come this much before their sound
+CLEAR_SPEED = 1.2     # the model says every word clearly up to +20%: above, the engine makes the clip shorter in time
 HELP = ("Put a sample of a voice in voices/<name>.wav, with the words that it says in voices/<name>.txt: "
         "in the folder of the video, or in the folder of the template. `voice` can also be the path of an audio file.")
 
@@ -68,6 +73,15 @@ def speed_of(rate: str) -> float:
     if not match:
         return 1.0
     return 1 + int(match.group(2)) / 100 * (1 if match.group(1) == "+" else -1)
+
+
+def speeds_of(rate: str) -> tuple[float, float]:
+    """For the rate of video.toml: the speed of the model, and how much the clip is made shorter
+    in time. The model says every word clearly up to `CLEAR_SPEED`. Above, it stays there, and
+    the time of the clip gives the rest: "+32%" gives 1.2 and 1.1."""
+    wanted = speed_of(rate)
+    model = min(wanted, CLEAR_SPEED)
+    return model, round(wanted / model, 4)
 
 
 def folders_of(project: Path | None) -> list[Path]:
@@ -240,7 +254,11 @@ class OmniVoiceEngine(Engine):
             return Status(False, "not installed (" + ", ".join(missing) + "). Start tools/setup-omnivoice.sh: about 11 GB.")
         voices = self.voices(self.language, self.project)
         if voices:
-            detail = "voices: " + ", ".join(voices)
+            shown = []
+            for name in voices:
+                rate = self.default_rate(name, self.project)
+                shown.append(f"{name} (rate {rate})" if rate else name)
+            detail = "voices: " + ", ".join(shown)
         else:
             detail = "no voice yet: put a sample of a voice in a folder voices/ (docs/5-tts-engines.md)"
         return Status(True, f"a local model on the {self._machine()}, with a sample of a voice; {detail}")
@@ -248,12 +266,30 @@ class OmniVoiceEngine(Engine):
     def voices(self, language, root: Path | None = None) -> list[str]:
         return sample_names(self.folders if self.folders is not None else folders_of(root))
 
+    def default_rate(self, voice: str | None, root: Path | None = None) -> str:
+        """The speed of a voice, from its third file: `voices/<name>.toml`, with `rate = "+32%"`.
+        Without a voice, it is the speed of the first voice of the folders. An empty string when
+        the voice has no file, and when there is no voice."""
+        folders = self.folders if self.folders is not None else folders_of(root)
+        name = voice or next(iter(sample_names(folders)), None)
+        sample = find_sample(name, folders, root) if name else None
+        path = sample.path.with_suffix(".toml") if sample else None
+        if path is None or not path.is_file():
+            return ""
+        value = str(tomllib.loads(path.read_text(encoding="utf-8")).get("rate", "")).strip()
+        if value and not RATE.fullmatch(value):
+            raise ValueError(f"The rate '{value}' in {path} is not valid. Use a value such as '+5%' or '-10%'.")
+        return value
+
     def signature(self, voice: str, rate: str) -> str:
         """The clips change when the sample of the voice changes, or when the worker changes the audio."""
         sample = find_sample(voice, self._folders(), self.project)
         if sample is None:
             return ""
-        return f"|clips {worker.CLIPS}|{hashlib.sha1(sample.path.read_bytes()).hexdigest()}|{hashlib.sha1(sample.text.encode('utf-8')).hexdigest()}"
+        # Only the clips made shorter in time depend on the way the worker compresses them.
+        squeezed = f"|time {worker.TIME_STRETCH}" if speeds_of(rate)[1] > 1.0 else ""
+        return (f"|clips {worker.CLIPS}|{hashlib.sha1(sample.path.read_bytes()).hexdigest()}"
+                f"|{hashlib.sha1(sample.text.encode('utf-8')).hexdigest()}{squeezed}")
 
     def synthesize(self, text: str, voice: str, rate: str) -> Clip:
         folders = self._folders()
@@ -276,9 +312,10 @@ class OmniVoiceEngine(Engine):
             raise RuntimeError("OmniVoice has no words to read in this beat.")
         # The model chooses at random: the seed comes from the text, so that a clip made again is the same.
         seed = int(hashlib.sha256(f"{sample.path}|{rate}|{text}".encode("utf-8")).hexdigest()[:8], 16)
+        speed, stretch = speeds_of(rate)
         answer = self.worker.request({
             "op": "synthesize", "text": " ".join(words), "language": code, "ref": str(sample.path), "ref_text": sample.text,
-            "speed": speed_of(rate), "seed": seed,
+            "speed": speed, "stretch": stretch, "seed": seed,
         })
         if not answer.get("ok"):
             raise RuntimeError(f"OmniVoice: {answer.get('error', 'unknown error')}")

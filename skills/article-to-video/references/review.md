@@ -22,16 +22,22 @@ Open every sheet with the Read tool. For each frame, compare the frame with the 
 - Is each object completely in the frame, far from the border?
 - Is a line, an arrow or a box on text?
 - Does the frame agree with what the voice says at that moment?
-- Are the small labels readable? At 480p the small text is difficult: verify the size in the 1080p film when in doubt.
+- Are the small labels readable? At 480p the small text is difficult to read, and easy to read wrong: verify it on the film at 1080p when in doubt.
 - Is the title of the chapter free (top left)?
 
 Correct, then start `check`, `render --quality l` and `sheet` again.
 
-The preview has no subtitles. After the assembly, `videogen sheet --film --quality h` makes the contact sheets of the film: each frame has its subtitle. Open them and verify the look in each frame:
+The preview has no subtitles. After the assembly, `videogen sheet --film --quality h` makes the contact sheets of the film: each frame is at the end of its beat. Open them and verify the look in each frame:
 
 - Are the background and the logo at the top right there?
 - Is the subtitle in the band at the bottom, in the font and the color of the look?
 - Is a visual in the band, under the subtitles, or under the logo?
+
+The frame comes 0.3 seconds before the end of the beat. When the voice ended earlier, the band is empty in that frame: it is not a defect. To see the subtitle of the last words of a beat, take a frame of the film one second before, and open it:
+
+```bash
+ffmpeg -ss <time in seconds> -i <film> -frames:v 1 frame.png
+```
 
 When a frame is wrong, correct the scene, render only that scene, then start `assemble` and `sheet --film` again.
 

@@ -89,6 +89,35 @@ def test_subtitles_show_the_script_not_the_text_that_the_voice_reads():
     assert " ".join(text for _start, _end, text in subtitles.group_cues(shown)) == "OpenAI ha rilasciato GPT-5.6 a novembre."
 
 
+def test_a_command_on_some_scenes_needs_only_their_files(tmp_path, monkeypatch):
+    """The scenes of a video are written at the same time, one by each builder of the skill. A
+    command on some scenes operates when the files of the other scenes are not there yet."""
+    import subprocess
+
+    from videogen import cli
+
+    (tmp_path / "scenes").mkdir()
+    for name, scene, title in (("ch00_intro.py", "ch00", "Intro"), ("ch02_idea.py", "ch02", "Idea")):
+        (tmp_path / "scenes" / name).write_text(f"class {title}(NarratedScene):\n    scene_key = '{scene}'\n", encoding="utf-8")
+    script = load_script(DEMO)                                   # ch00, ch01, ch02, ch03
+    with pytest.raises(RuntimeError, match="No scene file for: ch01, ch03"):
+        cli.scene_files(tmp_path, script)                        # all the scenes: all the files
+    found = cli.scene_files(tmp_path, script, ["ch00", "ch02"])
+    assert [path.name for path in found.values()] == ["ch00_intro.py", "ch02_idea.py"]
+    with pytest.raises(RuntimeError, match="No scene file for: ch01"):
+        cli.scene_files(tmp_path, script, ["ch01"])
+    commands = []
+
+    def run(command, **options):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(cli.subprocess, "run", run)
+    stats = cli.run_scenes(tmp_path, script, ["ch02"], "l", 1, dry_run=True, log=lambda message: None)
+    assert stats == {"layout": 0, "cue": 0, "pace": 0, "failed": []} and len(commands) == 1
+    assert commands[0][-2:] == [str(tmp_path / "scenes" / "ch02_idea.py"), "Idea"]
+
+
 def test_layout_verification():
     first = theme.T("first line").move_to([0, 0, 0])
     second = theme.T("second line").move_to([0, 0, 0])

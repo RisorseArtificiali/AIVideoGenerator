@@ -2,16 +2,18 @@
 
 This folder has the voices of the speech engine `omnivoice`: a local model that reads the text with a voice cloned from a sample. The installer of the engine is `tools/setup-omnivoice.sh`. The details are in [`docs/5-tts-engines.md`](docs/5-tts-engines.md).
 
-A voice is two files with the same name:
+A voice is two files with the same name, and an optional third file with its speed:
 
 | File | Content |
 |---|---|
 | `voices/<name>.wav` | a sample of the voice, from 2 to 20 seconds. WAV, FLAC, OGG or MP3 |
 | `voices/<name>.txt` | the words of the sample, exactly as the voice says them |
+| `voices/<name>.toml` | optional: the speed of the voice, for example `rate = "+32%"` |
 
 ```text
 voices/elsa.wav
 voices/elsa.txt
+voices/elsa.toml     (optional)
 ```
 
 To record a good sample:
@@ -27,6 +29,10 @@ Then use the name of the voice in `video.toml`:
 engine = "omnivoice"
 voice = "elsa"
 ```
+
+**The speed.** When the voice has its `.toml` file, `videogen new` writes that speed as `rate` in the `video.toml` of the new video. To change the speed of one video, change `rate` in its `video.toml`. To change it for the next videos, change the `.toml` file of the voice. `videogen doctor` shows the speed of each voice.
+
+Up to `+20%` the model speaks faster. Above `+20%`, the engine keeps the model at `+20%` and makes the clips shorter in time, with the same pitch: made to speak faster than that, the model stops saying some words clearly.
 
 ## Rules of this folder
 

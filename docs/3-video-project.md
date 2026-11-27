@@ -43,7 +43,7 @@ color = "#FF0000"
 | `language` | the language of the video: `en`, `it` | `en` |
 | `engine` | the speech engine: `edge-tts` (online) or `omnivoice` (a local model, with a sample of a voice) | `edge-tts` |
 | `voice` | a voice of the engine. For `omnivoice`: the name of a sample in a folder `voices` | the first voice of the language |
-| `rate` | the speed of the voice: `"+10%"` or `"-5%"` | `"+0%"` |
+| `rate` | the speed of the voice: `"+10%"` or `"-5%"` | `"+0%"`, or the speed of the voice when the voice has one (`voices/<name>.toml` of `omnivoice`) |
 | `out_name` | the base name of the output files | the name of the folder |
 
 The sections `[style]` and `[subtitles]` are the look of the video. `videogen new` writes them at the end of the file.

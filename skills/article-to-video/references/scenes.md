@@ -44,7 +44,7 @@ In the scene you have `self.config` (the configuration), `self.lang` (the langua
 - **The band at the bottom is for the subtitles.** Keep all the content above `y = -2.9`: with the look of the template, the band is 140 pixels at 1080p, and the subtitles are drawn there. The logo is in the corner at the top right: keep free the area with `x > 5.8` and `y > 2.2`. The blocks keep both free with their default positions. When you give a position or a height to a block, or you write geometry by hand, stay above the band.
 - `videogen check` reports the lines of text that are in the band (`[layout] … in the subtitle band`) and under the logo (`[layout] … under the logo`). It does not see a visual without text: the sheets of the film (`videogen sheet --film`, Step 6 of the skill) show the band with its subtitles.
 - Colors: `SERIES["blue"]`, `["orange"]`, `["aqua"]` for data, in this order. `BRIGHT[...]` for diagrams. `INK["secondary"]` and `INK["muted"]` for text of less importance.
-- Keep the same color for the same thing in the full video.
+- Keep the same color for the same thing in the full video: the `visual` notes of the plan say the color of what comes back in several chapters.
 
 ## 4. The entrance of the objects
 
@@ -53,6 +53,7 @@ In the scene you have `self.config` (the configuration), `self.lang` (the langua
 - `Create(arrow)`: an arrow or a line. `GrowFromEdge(bar, DOWN)`: a bar from its base.
 - `Write(text)`: only for a title.
 - `Indicate`, `Circumscribe`: to point at an object on a word of the voice.
+- To show one part of a block, use the parts that the block gives, as `points.row(2)` in the example of `takeaways`. `get_part_by_tex("a phrase")` gives None on a `T()` made from one string, and `FadeIn(None)` does nothing, without an error: `videogen check` cannot see it. Only the contact sheet shows the missing line.
 - An entrance of 1 to 2 seconds. A list of objects: `LaggedStart` with `lag_ratio` 0.1 to 0.3.
 
 ## 5. Charts
